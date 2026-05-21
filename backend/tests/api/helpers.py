@@ -2,7 +2,7 @@
 
 from starlette.testclient import TestClient
 
-from tests.types import JsonObject, JsonPayload, QueryParamValue
+from tests.types import JsonValue, JsonObject, JsonPayload, QueryParamValue
 
 
 def assert_ok(response_json: JsonObject) -> None:
@@ -22,36 +22,52 @@ def assert_page(response_json: JsonObject) -> list[JsonObject]:
     result: list[JsonObject] = []
     for item in items:
         assert isinstance(item, dict)
-        result.append(JsonObject(item))
+        result.append(item)
     return result
+
+
+def response_json(response: object) -> JsonObject:
+    """Assert and return a JSON object response."""
+    assert isinstance(response, dict)
+    return {key: json_value(value) for key, value in response.items() if isinstance(key, str)}
+
+
+def json_value(value: object) -> JsonValue:
+    """Assert and return a JSON-compatible value."""
+    if isinstance(value, dict):
+        return {key: json_value(item) for key, item in value.items() if isinstance(key, str)}
+    if isinstance(value, list):
+        return [json_value(item) for item in value]
+    assert value is None or isinstance(value, str | int | float | bool)
+    return value
 
 
 def get_json(client: TestClient, path: str, headers: dict[str, str], **params: QueryParamValue) -> JsonObject:
     """GET a JSON API endpoint."""
     response = client.get(path, headers=headers, params={k: v for k, v in params.items() if v is not None})
     assert response.status_code == 200
-    return JsonObject(response.json())
+    return response_json(response.json())
 
 
 def post_json(client: TestClient, path: str, headers: dict[str, str], payload: JsonPayload) -> JsonObject:
     """POST a JSON API endpoint."""
     response = client.post(path, headers=headers, json=payload)
     assert response.status_code == 200
-    return JsonObject(response.json())
+    return response_json(response.json())
 
 
 def put_json(client: TestClient, path: str, headers: dict[str, str], payload: JsonPayload = None) -> JsonObject:
     """PUT a JSON API endpoint."""
     response = client.put(path, headers=headers, json=payload)
     assert response.status_code == 200
-    return JsonObject(response.json())
+    return response_json(response.json())
 
 
 def delete_json(client: TestClient, path: str, headers: dict[str, str], payload: JsonPayload = None) -> JsonObject:
     """DELETE a JSON API endpoint."""
     response = client.request("DELETE", path, headers=headers, json=payload)
     assert response.status_code == 200
-    return JsonObject(response.json())
+    return response_json(response.json())
 
 
 def find_created_id(client: TestClient, path: str, headers: dict[str, str], key: str, value: object) -> int:

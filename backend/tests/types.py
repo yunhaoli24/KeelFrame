@@ -1,9 +1,6 @@
 """Shared test types."""
 
-from typing import TypeAlias
-
-
-JsonValue: TypeAlias = dict[str, "JsonValue"] | list["JsonValue"] | str | int | float | bool | None
-JsonObject: TypeAlias = dict[str, JsonValue]
-JsonPayload: TypeAlias = object
-QueryParamValue: TypeAlias = str | int | float | bool | None
+type JsonValue = dict[str, "JsonValue"] | list["JsonValue"] | str | int | float | bool | None
+type JsonObject = dict[str, JsonValue]
+type JsonPayload = object
+type QueryParamValue = str | int | float | bool | None
