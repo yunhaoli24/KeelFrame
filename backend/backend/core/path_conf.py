@@ -19,6 +19,3 @@ STATIC_DIR = BASE_PATH / "static"
 
 # 上传文件目录
 UPLOAD_DIR = STATIC_DIR / "upload"
-
-# 插件目录
-PLUGIN_DIR = BASE_PATH / "plugin"

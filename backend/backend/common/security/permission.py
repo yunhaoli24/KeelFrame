@@ -8,7 +8,6 @@ from sqlalchemy import Table, ColumnElement, or_, and_, true
 from backend.core.conf import settings
 from backend.common.enums import RoleDataRuleOperatorType, RoleDataRuleExpressionType
 from backend.common.context import ctx
-from backend.utils.import_parse import get_all_models
 
 
 class RequestPermission:
@@ -40,7 +39,9 @@ class RequestPermission:
 
 def get_data_permission_models() -> dict[str, object]:
     """获取所有可用于数据权限的模型."""
-    return {getattr(model, "__name__", str(model)): model for model in get_all_models()}
+    from backend import ALL_MODELS  # noqa: PLC0415
+
+    return {getattr(model, "__name__", str(model)): model for model in ALL_MODELS}
 
 
 def filter_data_permission(request: Request, *models: Any) -> ColumnElement[bool]:  # noqa: ANN401

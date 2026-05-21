@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.conf import settings
 from backend.database.db import async_engine
+from backend.app.config.enums import ConfigType
 from backend.utils.serializers import select_list_serialize
-from backend.plugin.config.enums import ConfigType
-from backend.plugin.config.crud.crud_config import config_dao
+from backend.app.config.crud.crud_config import config_dao
 
 
 _sys_config_table_exists: bool | None = None

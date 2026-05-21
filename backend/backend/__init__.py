@@ -2,10 +2,54 @@
 
 import sqlalchemy as sa
 
-from backend.utils.import_parse import get_all_models
+from backend.app.s3.model import S3Storage
+from backend.app.dict.model import DictData, DictType
+from backend.app.task.model import TaskResult, TaskScheduler
+from backend.app.admin.model import (
+    Dept,
+    Menu,
+    Role,
+    User,
+    DataRule,
+    LoginLog,
+    OperaLog,
+    DataScope,
+    UserPasswordHistory,
+    role_menu,
+    user_role,
+    data_scope_rule,
+    role_data_scope,
+)
+from backend.app.config.model import Config
+from backend.app.notice.model import Notice
+from backend.app.oauth2.model import UserSocial
 
 
-for cls in get_all_models():
+ALL_MODELS: tuple[object, ...] = (
+    Config,
+    DataRule,
+    DataScope,
+    Dept,
+    DictData,
+    DictType,
+    LoginLog,
+    Menu,
+    Notice,
+    OperaLog,
+    Role,
+    S3Storage,
+    TaskResult,
+    TaskScheduler,
+    User,
+    UserPasswordHistory,
+    UserSocial,
+    data_scope_rule,
+    role_data_scope,
+    role_menu,
+    user_role,
+)
+
+for cls in ALL_MODELS:
     if isinstance(cls, sa.Table):
         table_name = cls.name  # pyright: ignore[reportAttributeAccessIssue]
         if table_name not in globals():

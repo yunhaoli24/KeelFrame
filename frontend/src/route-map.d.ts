@@ -230,27 +230,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/plugins/config/': RouteRecordInfo<
-      '/plugins/config/',
-      '/plugins/config',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/plugins/dict/': RouteRecordInfo<
-      '/plugins/dict/',
-      '/plugins/dict',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/plugins/notice/': RouteRecordInfo<
-      '/plugins/notice/',
-      '/plugins/notice',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/scheduler/manage/': RouteRecordInfo<
       '/scheduler/manage/',
       '/scheduler/manage',
@@ -282,6 +261,13 @@ declare module 'vue-router/auto-routes' {
     '/settings/appearance': RouteRecordInfo<
       '/settings/appearance',
       '/settings/appearance',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/system/config/': RouteRecordInfo<
+      '/system/config/',
+      '/system/config',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -328,9 +314,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/system/dict/': RouteRecordInfo<
+      '/system/dict/',
+      '/system/dict',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/system/menu/': RouteRecordInfo<
       '/system/menu/',
       '/system/menu',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/system/notice/': RouteRecordInfo<
+      '/system/notice/',
+      '/system/notice',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -536,24 +536,6 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
-    'src/pages/plugins/config/index.vue': {
-      routes:
-        | '/plugins/config/'
-      views:
-        | never
-    }
-    'src/pages/plugins/dict/index.vue': {
-      routes:
-        | '/plugins/dict/'
-      views:
-        | never
-    }
-    'src/pages/plugins/notice/index.vue': {
-      routes:
-        | '/plugins/notice/'
-      views:
-        | never
-    }
     'src/pages/scheduler/manage/index.vue': {
       routes:
         | '/scheduler/manage/'
@@ -581,6 +563,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/settings/appearance.vue': {
       routes:
         | '/settings/appearance'
+      views:
+        | never
+    }
+    'src/pages/system/config/index.vue': {
+      routes:
+        | '/system/config/'
       views:
         | never
     }
@@ -620,9 +608,21 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/system/dict/index.vue': {
+      routes:
+        | '/system/dict/'
+      views:
+        | never
+    }
     'src/pages/system/menu/index.vue': {
       routes:
         | '/system/menu/'
+      views:
+        | never
+    }
+    'src/pages/system/notice/index.vue': {
+      routes:
+        | '/system/notice/'
       views:
         | never
     }

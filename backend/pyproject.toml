@@ -21,7 +21,6 @@ dependencies = [
     # https://github.com/celery/celery/issues/7874
     "celery-aio-pool>=0.1.0rc8",
     "cryptography>=46.0.3",
-    "dulwich>=0.24.10",
     "fast-captcha>=0.3.2",
     "fastapi-limiter>=0.2.0",
     "fastapi-pagination>=0.15.0",
@@ -51,10 +50,8 @@ dependencies = [
     "python-jose>=3.5.0",
     "python-socketio>=5.15.0",
     "redis[hiredis]>=7.1.0",
-    "rtoml>=0.13.0",
     "sqlalchemy-crud-plus>=1.13.1",
     "sqlalchemy[asyncio]>=2.0.44",
-    "sqlparse>=0.5.4",
     "starlette-context>=0.4.0",
     "user-agents>=2.2.0",
     "aio-pika>=9.5.8",
@@ -71,6 +68,7 @@ dev = [
     "pyright>=1.1.407",
     "ruff>=0.14.10",
     "ty>=0.0.38",
+    "pytest-cov>=7.1.0",
 ]
 
 [tool.uv]
@@ -123,6 +121,12 @@ ignore = [
 ]
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
+    "S101",   # Use of `assert` detected
+    "ARG001", # Unused function argument
+    "SLF001", # Private member accessed
+    "PT018",  # Assertion should be broken down
+]
+"backend/tests/*" = [
     "S101",   # Use of `assert` detected
     "ARG001", # Unused function argument
     "SLF001", # Private member accessed

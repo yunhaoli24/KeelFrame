@@ -45,6 +45,10 @@ find_available_port() {
 cleanup() {
   trap - EXIT INT TERM
 
+  if [[ ${#PIDS[@]} -eq 0 ]]; then
+    return
+  fi
+
   for pid in "${PIDS[@]}"; do
     kill -TERM -"${pid}" 2>/dev/null || kill -TERM "${pid}" 2>/dev/null || true
   done

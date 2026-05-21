@@ -30,10 +30,10 @@ def select_columns_serialize(row: RowData) -> dict[str, Any]:
     """
     result: dict[str, Any] = {}
     for column in row.__table__.columns:
-        value = getattr(row, column)
+        value = getattr(row, column.key)
         if isinstance(value, Decimal):
             value = decimal_encoder(value)
-        result[column] = value
+        result[column.key] = value
     return result
 
 

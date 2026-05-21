@@ -1,10 +1,11 @@
 """User Service."""
 
 import random
-from typing import Any
+from typing import Any, cast
 from collections.abc import Sequence
 
 from fastapi import Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.conf import settings
@@ -15,6 +16,7 @@ from backend.app.admin.model import Role, User
 from backend.common.exception import errors
 from backend.common.pagination import paging_data
 from backend.utils.serializers import select_join_serialize
+from backend.app.admin.model.m2m import user_role
 from backend.app.admin.schema.user import (
     AddUserParam,
     UpdateUserParam,
@@ -57,10 +59,20 @@ class UserService:
         :param pk: 用户 ID
         :return:
         """
+        user = await user_dao.get(db, pk)
+        if not user:
+            raise errors.NotFoundError(msg="用户不存在")
+        stmt = select(Role).join(user_role, Role.id == user_role.c.role_id).where(user_role.c.user_id == pk)
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_userinfo_with_relations(*, db: AsyncSession, pk: int) -> dict[str, Any]:
+        """获取用户关联信息."""
         user = await user_dao.get_join(db, user_id=pk)
         if not user:
             raise errors.NotFoundError(msg="用户不存在")
-        return getattr(user, "roles", [])
+        return cast("dict[str, Any]", user)
 
     @staticmethod
     async def get_list(

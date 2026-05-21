@@ -31,7 +31,6 @@ const pageDescription = computed(() => {
     log: "日志查看功能",
     monitor: "系统监控功能",
     scheduler: "任务调度功能",
-    plugins: "插件管理功能",
   };
   for (const [key, desc] of Object.entries(descriptions)) {
     if (path.includes(key)) return desc;

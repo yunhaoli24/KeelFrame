@@ -24,7 +24,7 @@ export * from "./scheduler/scheduler";
 export * from "./scheduler/task";
 export * from "./scheduler/result";
 
-// Plugin types
-export * from "./plugins/dict/type";
-export * from "./plugins/dict/data";
-export * from "./plugins/notice";
+// Dictionary and notice types
+export * from "./system/dict/type";
+export * from "./system/dict/data";
+export * from "./system/notice";

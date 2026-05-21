@@ -8,5 +8,5 @@
 ## 入口
 
 - 全栈开发启动与进程管理：`docs/backend/dev-startup.md`
-- 数据库迁移配置：`backend/backend/alembic/`
+- 数据库迁移与基线数据配置：`backend/backend/alembic/`
 - 后端 lint、pyright 与 ty 约束：`docs/backend/lint-pyright.md`

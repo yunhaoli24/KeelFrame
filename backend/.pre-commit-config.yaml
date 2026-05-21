@@ -45,6 +45,17 @@ repos:
         pass_filenames: false
         args: [backend]
 
+      - id: pytest
+        name: pytest
+        entry: uv run pytest
+        language: system
+        pass_filenames: false
+        args:
+          - tests
+          - --cov=backend
+          - --cov-report=term-missing
+          - --cov-fail-under=50
+
       - id: uv-lock
         name: uv lock
         entry: uv lock

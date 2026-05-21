@@ -113,13 +113,6 @@ class FileType(StrEnum):
     video = "video"
 
 
-class PluginType(StrEnum):
-    """插件类型."""
-
-    zip = "zip"
-    git = "git"
-
-
 class UserPermissionType(StrEnum):
     """用户权限类型."""
 
@@ -127,9 +120,3 @@ class UserPermissionType(StrEnum):
     staff = "staff"
     status = "status"
     multi_login = "multi_login"
-
-
-class DataBaseType(StrEnum):
-    """数据库类型."""
-
-    postgresql = "postgresql"
