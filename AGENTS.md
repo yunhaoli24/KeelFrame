@@ -11,7 +11,7 @@
 ## 开发约定（必须）
 
 - **Lint 错误**: 用户提到 lint 错误时，**必须运行** `cd backend && bash pre-commit.sh` 查看具体错误
-- 提交前质量门禁：**必须先使用 subagent 执行 `code-simplifier` 和 `development-quality-check`，完成代码质量检查后再提交或发起 PR/MR。**
+- 提交前质量门禁：**必须先使用 subagent 执行 `code-simplifier` 和 `development-quality-check`，完成代码质量检查后再提交或发起 PR/MR。(不要给subagent太多上下文和假设，让他自己发现问题)**
 - 不需要向后兼容：涉及旧功能更改时允许直接重构。
 - **当前仓库现状（必须按现状开发）**：
   - 全栈开发统一通过根目录 `./dev.sh` 启动，脚本负责拉起所需服务

@@ -2,7 +2,7 @@
 
 from starlette.testclient import TestClient
 
-from tests.api.helpers import assert_ok, assert_page, get_json
+from tests.api.helpers import get_json, assert_ok, assert_page
 
 
 def test_current_user_and_permissions(client: TestClient, token_headers: dict[str, str]) -> None:

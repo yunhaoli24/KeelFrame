@@ -1,0 +1,1 @@
+"""Notice app module."""

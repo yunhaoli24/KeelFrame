@@ -3,8 +3,8 @@
 from fastapi import Request, APIRouter
 
 from backend.database.db import CurrentSession, CurrentSessionTransaction
-from backend.common.security.jwt import DependsJwtAuth
 from backend.app.oauth2.enums import UserSocialType
+from backend.common.security.jwt import DependsJwtAuth
 from backend.common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
 from backend.app.oauth2.service.user_social_service import user_social_service
 

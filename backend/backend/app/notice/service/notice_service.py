@@ -5,9 +5,9 @@ from collections.abc import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.notice.model import Notice
 from backend.common.exception import errors
 from backend.common.pagination import paging_data
-from backend.app.notice.model import Notice
 from backend.app.notice.schema.notice import CreateNoticeParam, DeleteNoticeParam, UpdateNoticeParam
 from backend.app.notice.crud.crud_notice import notice_dao
 

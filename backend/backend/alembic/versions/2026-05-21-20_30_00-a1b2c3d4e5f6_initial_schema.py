@@ -2891,7 +2891,7 @@ def _reset_id_sequences() -> None:
     connection = op.get_bind()
     for table in SEEDED_ID_TABLES:
         max_id = sa.select(sa.func.max(table.c.id)).scalar_subquery()
-        connection.execute(sa.select(sa.func.setval(f"{table.name}_id_seq", max_id, True)))
+        connection.execute(sa.select(sa.func.setval(f"{table.name}_id_seq", max_id, sa.true())))
 
 
 SEEDED_ID_TABLES = (

@@ -5,9 +5,9 @@ from collections.abc import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.config.model import Config
 from backend.common.exception import errors
 from backend.common.pagination import paging_data
-from backend.app.config.model import Config
 from backend.app.config.schema.config import (
     CreateConfigParam,
     UpdateConfigParam,

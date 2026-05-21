@@ -8,13 +8,13 @@ from backend.database.db import CurrentSession, CurrentSessionTransaction
 from backend.common.pagination import PageData, DependsPagination
 from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.rbac import DependsRBAC
-from backend.common.security.permission import RequestPermission
 from backend.app.config.schema.config import (
     GetConfigDetail,
     CreateConfigParam,
     UpdateConfigParam,
     UpdateConfigsParam,
 )
+from backend.common.security.permission import RequestPermission
 from backend.common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
 from backend.app.config.service.config_service import config_service
 

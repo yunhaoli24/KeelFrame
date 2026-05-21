@@ -13,14 +13,14 @@ from backend.common.context import ctx
 from backend.database.redis import redis_client
 from backend.utils.timezone import timezone
 from backend.common.security import jwt
-from backend.common.exception import errors
 from backend.app.oauth2.enums import UserSocialType, UserSocialAuthType
+from backend.common.exception import errors
 from backend.app.admin.schema.user import GetUserInfoDetail, AddOAuth2UserParam
 from backend.app.admin.schema.token import GetLoginToken
 from backend.app.admin.crud.crud_user import user_dao
 from backend.app.oauth2.schema.user_social import CreateUserSocialParam
-from backend.app.admin.service.login_log_service import login_log_service
 from backend.app.oauth2.crud.crud_user_social import user_social_dao
+from backend.app.admin.service.login_log_service import login_log_service
 from backend.app.oauth2.service.user_social_service import user_social_service
 
 

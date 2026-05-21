@@ -3,7 +3,7 @@
 from starlette.testclient import TestClient
 
 from tests.conftest import DataStore, login_headers
-from tests.api.helpers import assert_ok, get_json, put_json, post_json, delete_json, find_created_id
+from tests.api.helpers import get_json, put_json, assert_ok, post_json, delete_json, find_created_id
 
 
 def test_user_lifecycle(client: TestClient, token_headers: dict[str, str], data_store: DataStore) -> None:
@@ -27,7 +27,7 @@ def test_user_lifecycle(client: TestClient, token_headers: dict[str, str], data_
     update_payload = payload | {"nickname": "API User Updated", "phone": "13900000002"}
     assert_ok(put_json(client, f"/sys/users/{user_id}", token_headers, update_payload))
     assert_ok(put_json(client, f"/sys/users/{user_id}/permissions?permission_type=staff", token_headers))
-    new_password = "abc123"
+    new_password = "abc123"  # noqa: S105
     assert_ok(put_json(client, f"/sys/users/{user_id}/password", token_headers, {"password": new_password}))
 
     data_store.created["api_user_headers"] = login_headers(client, username, new_password)

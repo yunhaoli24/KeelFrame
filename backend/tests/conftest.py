@@ -1,26 +1,26 @@
 """Pytest fixtures for black-box API tests."""
 
-from typing import Any
 import asyncio
-from dataclasses import dataclass, field
+from typing import Any
+from dataclasses import field, dataclass
 from collections.abc import Generator
 
-import psycopg
 import pytest
+import psycopg
 from alembic import command
 from alembic.config import Config
 from starlette.testclient import TestClient
 
 from backend.main import app
+from tests.utils.db import (
+    TEST_SQLALCHEMY_DATABASE_URL,
+    override_get_db,
+    async_test_engine,
+    override_get_db_transaction,
+)
 from backend.core.conf import settings
 from backend.database.db import get_db, get_db_transaction, create_database_url
 from backend.core.path_conf import ALEMBIC_DIR, ALEMBIC_INI
-from tests.utils.db import (
-    TEST_SQLALCHEMY_DATABASE_URL,
-    async_test_engine,
-    override_get_db,
-    override_get_db_transaction,
-)
 
 
 app.dependency_overrides[get_db] = override_get_db
@@ -45,10 +45,12 @@ class DataStore:
 
 def _reset_test_database() -> None:
     maintenance_url = create_database_url().set(database="postgres", drivername="postgresql")
-    with psycopg.connect(maintenance_url.render_as_string(hide_password=False), autocommit=True) as conn:
-        with conn.cursor() as cur:
-            cur.execute(f"DROP DATABASE IF EXISTS {settings.DATABASE_SCHEMA}_test WITH (FORCE)")
-            cur.execute(f"CREATE DATABASE {settings.DATABASE_SCHEMA}_test")
+    with (
+        psycopg.connect(maintenance_url.render_as_string(hide_password=False), autocommit=True) as conn,
+        conn.cursor() as cur,
+    ):
+        cur.execute(f"DROP DATABASE IF EXISTS {settings.DATABASE_SCHEMA}_test WITH (FORCE)")
+        cur.execute(f"CREATE DATABASE {settings.DATABASE_SCHEMA}_test")
 
 
 def _clear_test_redis() -> None:

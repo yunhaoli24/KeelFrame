@@ -8,13 +8,13 @@ from backend.database.db import CurrentSession, CurrentSessionTransaction
 from backend.common.pagination import PageData, DependsPagination
 from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.rbac import DependsRBAC
-from backend.common.security.permission import RequestPermission
 from backend.app.notice.schema.notice import (
     GetNoticeDetail,
     CreateNoticeParam,
     DeleteNoticeParam,
     UpdateNoticeParam,
 )
+from backend.common.security.permission import RequestPermission
 from backend.common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
 from backend.app.notice.service.notice_service import notice_service
 

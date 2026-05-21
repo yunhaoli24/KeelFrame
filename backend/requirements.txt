@@ -101,6 +101,8 @@ fastapi-cli==0.0.24
     # via fastapi
 fastapi-limiter==0.2.0
     # via fastapi-best-architecture
+fastapi-oauth20==0.0.3
+    # via fastapi-best-architecture
 fastapi-pagination==0.15.13
     # via fastapi-best-architecture
 flower==2.0.1
@@ -131,6 +133,7 @@ httptools==0.7.1
 httpx==0.28.1
     # via
     #   fastapi
+    #   fastapi-oauth20
     #   openai
 humanize==4.15.0
     # via flower
@@ -178,6 +181,8 @@ mypy-extensions==1.1.0
 nodeenv==1.10.0
     # via pyright
 openai==1.109.1
+    # via fastapi-best-architecture
+opendal==0.47.1
     # via fastapi-best-architecture
 opentelemetry-api==1.42.0
     # via

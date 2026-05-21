@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.conf import settings
 from backend.database.redis import redis_client
-from backend.common.exception import errors
 from backend.app.oauth2.enums import UserSocialType, UserSocialAuthType
+from backend.common.exception import errors
 from backend.app.oauth2.clients import github_client, google_client, linux_do_client
 from backend.app.oauth2.schema.user_social import CreateUserSocialParam
 from backend.app.oauth2.crud.crud_user_social import user_social_dao

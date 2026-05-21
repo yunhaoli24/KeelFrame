@@ -8,13 +8,13 @@ from backend.database.db import CurrentSession, CurrentSessionTransaction
 from backend.common.pagination import PageData, DependsPagination
 from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.rbac import DependsRBAC
-from backend.common.security.permission import RequestPermission
 from backend.app.dict.schema.dict_type import (
     GetDictTypeDetail,
     CreateDictTypeParam,
     DeleteDictTypeParam,
     UpdateDictTypeParam,
 )
+from backend.common.security.permission import RequestPermission
 from backend.common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
 from backend.app.dict.service.dict_type_service import dict_type_service
 

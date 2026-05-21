@@ -5,9 +5,9 @@ from collections.abc import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.dict.model import DictType
 from backend.common.exception import errors
 from backend.common.pagination import paging_data
-from backend.app.dict.model import DictType
 from backend.app.dict.schema.dict_type import CreateDictTypeParam, DeleteDictTypeParam, UpdateDictTypeParam
 from backend.app.dict.crud.crud_dict_type import dict_type_dao
 
