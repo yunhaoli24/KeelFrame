@@ -55,9 +55,15 @@ export function useGetSystemConfigsQuery(params: MaybeRefOrGetter<SystemConfigLi
   return useQuery<BackendResponse<PageData<SystemConfig>>, AxiosError>({
     queryKey: computed(() => [...SYSTEM_CONFIG_QUERY_KEY, resolvedParams.value]),
     queryFn: async () => {
+      const { type, ...params } = resolvedParams.value;
       const response = await axiosInstance.get<BackendResponse<PageData<SystemConfig>>>(
         "/sys/configs",
-        { params: resolvedParams.value },
+        {
+          params: {
+            ...params,
+            config_type: type,
+          },
+        },
       );
       return ensureSuccess(response.data);
     },

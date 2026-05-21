@@ -15,6 +15,28 @@ on:
 jobs:
   backend-lint:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: fba
+          POSTGRES_PASSWORD: 123456
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fba"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       UV_CACHE_DIR: /tmp/.uv-cache
       TEE_API_TOKEN: test-token
@@ -22,8 +44,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
       - uses: astral-sh/setup-uv@v7
@@ -45,5 +67,9 @@ jobs:
           key: lint-${{ runner.os }}-backend-${{ hashFiles('backend/uv.lock', 'backend/ruff.toml') }}
           restore-keys: |
             lint-${{ runner.os }}-backend-
+      - name: Prepare backend env
+        run: cp backend/.env.example backend/.env
+      - name: Run backend migrations
+        run: uv run fba migrate
       - name: Run backend lint checks
         run: bash pre-commit.sh

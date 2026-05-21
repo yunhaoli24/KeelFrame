@@ -32,10 +32,11 @@ if alembic_config.config_file_name is not None:
 target_metadata = MappedBase.metadata
 
 # other values from the config, defined by the needs of env.py,
-alembic_config.set_main_option(
-    "sqlalchemy.url",
-    SQLALCHEMY_DATABASE_URL.render_as_string(hide_password=False).replace("%", "%%"),
-)
+sqlalchemy_url = alembic_config.attributes.get("sqlalchemy_url", SQLALCHEMY_DATABASE_URL)
+if hasattr(sqlalchemy_url, "render_as_string"):
+    sqlalchemy_url = sqlalchemy_url.render_as_string(hide_password=False)
+
+alembic_config.set_main_option("sqlalchemy.url", str(sqlalchemy_url).replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:

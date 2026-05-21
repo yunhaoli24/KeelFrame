@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -m
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="${ROOT_DIR}/frontend"
 BACKEND_DIR="${ROOT_DIR}/backend"
 PIDS=()
 
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN="python"
+else
+  echo "Error: python3 or python is required for port detection." >&2
+  exit 1
+fi
+
 is_port_in_use() {
   local port="$1"
-  python - "$port" <<'PY'
+  "${PYTHON_BIN}" - "$port" <<'PY'
 import socket
 import sys
 
@@ -33,10 +43,34 @@ find_available_port() {
 }
 
 cleanup() {
+  trap - EXIT INT TERM
+
+  if [[ ${#PIDS[@]} -eq 0 ]]; then
+    return
+  fi
+
   for pid in "${PIDS[@]}"; do
-    if kill -0 "${pid}" 2>/dev/null; then
-      kill "${pid}" 2>/dev/null || true
-    fi
+    kill -TERM -"${pid}" 2>/dev/null || kill -TERM "${pid}" 2>/dev/null || true
+  done
+
+  sleep 2
+
+  for pid in "${PIDS[@]}"; do
+    kill -KILL -"${pid}" 2>/dev/null || kill -KILL "${pid}" 2>/dev/null || true
+  done
+
+  wait 2>/dev/null || true
+}
+
+wait_for_any_exit() {
+  while true; do
+    for pid in "${PIDS[@]}"; do
+      if ! kill -0 "${pid}" 2>/dev/null; then
+        wait "${pid}" 2>/dev/null || true
+        return
+      fi
+    done
+    sleep 1
   done
 }
 
@@ -51,9 +85,15 @@ fi
 echo "Backend API port: ${API_PORT}"
 echo "Flower port: ${FLOWER_PORT}"
 
+echo "Applying backend database migrations..."
+(
+  cd "${BACKEND_DIR}"
+  exec uv run fba migrate
+)
+
 (
   cd "${FRONTEND_DIR}"
-  exec pnpm dev
+  exec pnpm run dev
 ) &
 PIDS+=("$!")
 
@@ -81,4 +121,4 @@ PIDS+=("$!")
 ) &
 PIDS+=("$!")
 
-wait -n "${PIDS[@]}"
+wait_for_any_exit

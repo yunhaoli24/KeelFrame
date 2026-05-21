@@ -2,10 +2,7 @@
 
 from enum import Enum
 from enum import IntEnum as SourceIntEnum
-from typing import Any, TypeVar
-
-
-T = TypeVar("T", bound=Enum)
+from typing import Any, cast
 
 
 class _EnumBase:
@@ -14,17 +11,20 @@ class _EnumBase:
     @classmethod
     def get_member_keys(cls) -> list[str]:
         """获取枚举成员名称列表."""
-        return list(cls.__members__.keys())  # type: ignore[attr-defined]
+        members = getattr(cls, "__members__", {})
+        return list(members.keys())
 
     @classmethod
     def get_member_values(cls) -> list[Any]:
         """获取枚举成员值列表."""
-        return [item.value for item in cls.__members__.values()]  # type: ignore[attr-defined]
+        members = cast("dict[str, Enum]", getattr(cls, "__members__", {}))
+        return [item.value for item in members.values()]
 
     @classmethod
     def get_member_dict(cls) -> dict[str, Any]:
         """获取枚举成员字典."""
-        return {name: item.value for name, item in cls.__members__.items()}  # type: ignore[attr-defined]
+        members = cast("dict[str, Enum]", getattr(cls, "__members__", {}))
+        return {name: item.value for name, item in members.items()}
 
 
 class IntEnum(_EnumBase, SourceIntEnum):
@@ -113,13 +113,6 @@ class FileType(StrEnum):
     video = "video"
 
 
-class PluginType(StrEnum):
-    """插件类型."""
-
-    zip = "zip"
-    git = "git"
-
-
 class UserPermissionType(StrEnum):
     """用户权限类型."""
 
@@ -127,9 +120,3 @@ class UserPermissionType(StrEnum):
     staff = "staff"
     status = "status"
     multi_login = "multi_login"
-
-
-class DataBaseType(StrEnum):
-    """数据库类型."""
-
-    postgresql = "postgresql"

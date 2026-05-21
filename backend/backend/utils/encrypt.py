@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, modes, algorithms
 from backend.common.log import log
 
 
-def normalize_key(key: bytes | bytearray | memoryview[Any] | str) -> bytes:
+def normalize_key(key: bytes | bytearray | memoryview | str) -> bytes:
     """Normalize Key."""
     if isinstance(key, str):
         return bytes.fromhex(key)
@@ -22,7 +22,7 @@ def normalize_key(key: bytes | bytearray | memoryview[Any] | str) -> bytes:
 class AESCipher:
     """AES 加密器."""
 
-    def __init__(self, key: bytes | bytearray | memoryview[Any] | str) -> None:
+    def __init__(self, key: bytes | bytearray | memoryview | str) -> None:
         """初始化 AES 加密器.
 
         :param key: 密钥，16/24/32 bytes 或 16 进制字符串
@@ -47,7 +47,7 @@ class AESCipher:
         ciphertext = encryptor.update(padded_plaintext) + encryptor.finalize()
         return iv + ciphertext
 
-    def decrypt(self, ciphertext: bytes | bytearray | memoryview[Any] | str) -> str:
+    def decrypt(self, ciphertext: bytes | bytearray | memoryview | str) -> str:
         """AES 解密.
 
         :param ciphertext: 解密前的密文，bytes 或 16 进制字符串
@@ -85,7 +85,7 @@ class Md5Cipher:
 class ItsDCipher:
     """ItsDangerous 加密器."""
 
-    def __init__(self, key: bytes | bytearray | memoryview[Any] | str) -> None:
+    def __init__(self, key: bytes | bytearray | memoryview | str) -> None:
         """初始化 ItsDangerous 加密器.
 
         :param key: 密钥，16/24/32 bytes 或 16 进制字符串

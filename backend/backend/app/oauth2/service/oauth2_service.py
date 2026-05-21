@@ -1,0 +1,221 @@
+"""Oauth2 Service."""
+
+import json
+from typing import Any, cast
+
+from fastapi import Response, BackgroundTasks
+from fast_captcha import text_captcha
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.core.conf import settings
+from backend.common.enums import LoginLogStatusType
+from backend.common.context import ctx
+from backend.database.redis import redis_client
+from backend.utils.timezone import timezone
+from backend.common.security import jwt
+from backend.app.oauth2.enums import UserSocialType, UserSocialAuthType
+from backend.common.exception import errors
+from backend.app.admin.schema.user import GetUserInfoDetail, AddOAuth2UserParam
+from backend.app.admin.schema.token import GetLoginToken
+from backend.app.admin.crud.crud_user import user_dao
+from backend.app.oauth2.schema.user_social import CreateUserSocialParam
+from backend.app.oauth2.crud.crud_user_social import user_social_dao
+from backend.app.admin.service.login_log_service import login_log_service
+from backend.app.oauth2.service.user_social_service import user_social_service
+
+
+class OAuth2Service:
+    """OAuth2 认证服务类."""
+
+    @staticmethod
+    async def login(
+        *,
+        db: AsyncSession,
+        response: Response,
+        background_tasks: BackgroundTasks,
+        sid: str,
+        source: UserSocialType,
+        username: str | None = None,
+        nickname: str | None = None,
+        email: str | None = None,
+        avatar: str | None = None,
+    ) -> GetLoginToken:
+        """OAuth2 用户登录.
+
+        :param db: 数据库会话
+        :param response: FastAPI 响应对象
+        :param background_tasks: FastAPI 后台任务
+        :param sid: 社交账号唯一编码
+        :param source: 社交平台
+        :param username: 用户名
+        :param nickname: 昵称
+        :param email: 邮箱
+        :param avatar: 头像地址
+        :return:
+        """
+        user_social = await user_social_dao.get_by_sid(db, sid, source.value)
+        if user_social:
+            sys_user = await user_dao.get(db, user_social.user_id)
+            # 更新用户头像
+            if sys_user and not sys_user.avatar and avatar is not None:
+                await user_dao.update_avatar(db, sys_user.id, avatar)
+        else:
+            sys_user = None
+            # 检测系统用户是否已存在
+            if email:
+                sys_user = await user_dao.check_email(db, email)
+
+            # 创建系统用户
+            if not sys_user:
+                safe_username = username or f"{source.value.lower()}_{sid}"
+                while username and await user_dao.get_by_username(db, username):
+                    username = f"{username}_{text_captcha(5)}"
+                new_sys_user = AddOAuth2UserParam.model_validate(
+                    {
+                        "username": username or safe_username,
+                        "password": None,
+                        "nickname": nickname,
+                        "email": email,
+                        "avatar": avatar,
+                    }
+                )
+                await user_dao.add_by_oauth2(db, new_sys_user)
+                await db.flush()
+                sys_user = await user_dao.get_by_username(db, username or safe_username)
+
+            # 绑定社交账号
+            if not sys_user:
+                raise errors.AuthorizationError(msg="用户不存在")
+            new_user_social = CreateUserSocialParam(sid=sid, source=source, user_id=sys_user.id)
+            await user_social_dao.create(db, new_user_social)
+
+        # 创建 token
+        if not sys_user:
+            raise errors.AuthorizationError(msg="用户不存在")
+        access_token_data = await jwt.create_access_token(
+            sys_user.id,
+            multi_login=sys_user.is_multi_login,
+            # extra info
+            username=sys_user.username,
+            nickname=sys_user.nickname,
+            last_login_time=timezone.to_str(timezone.now()),
+            ip=ctx.ip,
+            os=ctx.os,
+            browser=ctx.browser,
+            device=ctx.device,
+        )
+        refresh_token_data = await jwt.create_refresh_token(
+            access_token_data.session_uuid,
+            sys_user.id,
+            multi_login=sys_user.is_multi_login,
+        )
+        await user_dao.update_login_time(db, sys_user.username)
+        await db.refresh(sys_user)
+        background_tasks.add_task(
+            login_log_service.create,
+            db=db,
+            user_uuid=sys_user.uuid,
+            username=sys_user.username,
+            login_time=timezone.now(),
+            status=LoginLogStatusType.success.value,
+            msg="OAuth2登录成功",
+        )
+        await redis_client.delete(f"{settings.LOGIN_CAPTCHA_REDIS_PREFIX}:{ctx.ip}")
+        response.set_cookie(
+            key=settings.COOKIE_REFRESH_TOKEN_KEY,
+            value=refresh_token_data.refresh_token,
+            max_age=settings.COOKIE_REFRESH_TOKEN_EXPIRE_SECONDS,
+            expires=timezone.to_utc(refresh_token_data.refresh_token_expire_time),
+            httponly=True,
+        )
+        return GetLoginToken(
+            access_token=access_token_data.access_token,
+            access_token_expire_time=access_token_data.access_token_expire_time,
+            session_uuid=access_token_data.session_uuid,
+            password_expire_days_remaining=None,
+            user=GetUserInfoDetail.model_validate(sys_user),
+        )
+
+    async def login_or_binding(
+        self,
+        *,
+        db: AsyncSession,
+        response: Response,
+        background_tasks: BackgroundTasks,
+        user: dict[str, Any],
+        social: UserSocialType,
+        state: str | None = None,
+    ) -> GetLoginToken | None:
+        """OAuth2 登录或绑定.
+
+        :param db: 数据库会话
+        :param response: FastAPI 响应对象
+        :param background_tasks: FastAPI 后台任务
+        :param user: OAuth2 用户信息
+        :param social: 社交平台类型
+        :param state: OAuth2 state 参数
+        :return:
+        """
+        sid = user.get("uuid")
+        username = user.get("username")
+        nickname = user.get("nickname")
+        email = user.get("email")
+        avatar = user.get("avatar_url")
+
+        match social:
+            case UserSocialType.github:
+                sid = user.get("id")
+                username = user.get("login")
+                nickname = user.get("name")
+            case UserSocialType.google:
+                sid = user.get("id")
+                username = user.get("name")
+                nickname = user.get("given_name")
+                avatar = user.get("picture")
+            case UserSocialType.linux_do:
+                sid = user.get("id")
+                nickname = user.get("name")
+            case _:
+                raise errors.ForbiddenError(msg=f"暂不支持 {social} OAuth2 登录")
+
+        if not state:
+            raise errors.ForbiddenError(msg="OAuth2 状态信息缺失")
+
+        state_data = await redis_client.get(f"{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}")
+        if not state_data:
+            raise errors.ForbiddenError(msg="OAuth2 状态信息无效或缺失")
+
+        state_info = json.loads(cast("str", state_data))
+        await redis_client.delete(f"{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}")
+
+        # 绑定流程
+        if state_info.get("type") == UserSocialAuthType.binding.value:
+            user_id = state_info.get("user_id")
+            if not user_id:
+                raise errors.ForbiddenError(msg="非法操作, OAuth2 状态信息无效")
+            await user_social_service.binding_with_oauth2(
+                db=db,
+                user_id=user_id,
+                sid=str(sid),
+                source=social,
+            )
+            return None
+
+        # 登录流程
+        if state_info.get("type") != UserSocialAuthType.login.value:
+            raise errors.ForbiddenError(msg="OAuth2 状态信息无效")
+
+        return await self.login(
+            db=db,
+            response=response,
+            background_tasks=background_tasks,
+            sid=str(sid),
+            source=social,
+            username=username,
+            nickname=nickname,
+            email=email,
+            avatar=avatar,
+        )
+
+
+oauth2_service: OAuth2Service = OAuth2Service()

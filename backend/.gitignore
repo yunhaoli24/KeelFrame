@@ -7,3 +7,5 @@ venv/
 .ruff_cache/
 .pytest_cache/
 .claude/
+.coverage*
+__pycache__/

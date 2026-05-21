@@ -1,0 +1,9 @@
+allowBuilds:
+  maplibre-gl: false
+  simple-git-hooks: false
+  vue-demi: false
+minimumReleaseAgeExclude:
+  - "@ai-sdk/gateway@3.0.118"
+  - "@iconify-json/carbon@1.2.22"
+  - "@iconify-json/codicon@1.2.56"
+  - ai@6.0.188

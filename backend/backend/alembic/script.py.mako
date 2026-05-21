@@ -1,3 +1,4 @@
+# ruff: noqa: ANN201, D103, D400, D415, E501, I001, N999, Q000, RUF001, RUF100, W291
 """${message}
 
 Revision ID: ${up_revision}

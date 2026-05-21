@@ -53,7 +53,7 @@ class TaskSchedulerService:
         """
         dao = cast("Any", task_scheduler_dao)
         get_select = dao.get_select
-        task_scheduler_select: Any = await get_select(name=name, type=scheduler_type)
+        task_scheduler_select: Any = await get_select(name=name, scheduler_type=scheduler_type)
         return await paging_data(db, task_scheduler_select)
 
     @staticmethod

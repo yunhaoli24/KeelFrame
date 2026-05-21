@@ -203,12 +203,6 @@ class Settings(BaseSettings):
     OPERA_LOG_QUEUE_BATCH_CONSUME_SIZE: int = 100
     OPERA_LOG_QUEUE_TIMEOUT: int = 60  # 1 分钟
 
-    # Plugin 配置
-    PLUGIN_PIP_CHINA: bool = True
-    PLUGIN_PIP_INDEX_URL: str = "https://mirrors.aliyun.com/pypi/simple/"
-    PLUGIN_PIP_MAX_RETRY: int = 3
-    PLUGIN_REDIS_PREFIX: str = "fba:plugin"
-
     # Grafana
     GRAFANA_METRICS: bool = False
     GRAFANA_APP_NAME: str = "fba_server"
@@ -234,12 +228,7 @@ class Settings(BaseSettings):
     CELERY_TASK_MAX_RETRIES: int = 5
 
     ##################################################
-    # [ Plugin ] code_generator
-    ##################################################
-    CODE_GENERATOR_DOWNLOAD_ZIP_FILENAME: str = "fba_generator"
-
-    ##################################################
-    # [ Plugin ] oauth2
+    # [ App ] oauth2
     ##################################################
     # .env
     OAUTH2_GITHUB_CLIENT_ID: str
@@ -259,7 +248,7 @@ class Settings(BaseSettings):
     OAUTH2_FRONTEND_BINDING_REDIRECT_URI: str = "http://localhost:5173/profile"
 
     ##################################################
-    # [ Plugin ] email
+    # [ App ] email
     ##################################################
     # .env
     EMAIL_USERNAME: str

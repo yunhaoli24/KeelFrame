@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 from collections.abc import Sequence
 
 from fastapi import Query, Depends
@@ -11,7 +11,7 @@ from pydantic import Field, BaseModel
 from fastapi_pagination import pagination_ctx
 from fastapi_pagination.bases import RawParams, AbstractPage, AbstractParams
 from fastapi_pagination.links.bases import create_links
-from fastapi_pagination.ext.sqlalchemy import apaginate
+from fastapi_pagination.ext.sqlalchemy import apaginate  # pyright: ignore[reportUnknownVariableType]
 
 
 if TYPE_CHECKING:
@@ -77,14 +77,18 @@ class _CustomPage[T](_PageDetails, AbstractPage[T]):
         page = params.page
         size = params.size
         total_pages = ceil(total / size)
-        links = cast(
-            "_Links",
-            create_links(
-                first={"page": 1, "size": size},
-                last={"page": total_pages, "size": size} if total > 0 else {"page": 1, "size": size},
-                next={"page": page + 1, "size": size} if (page + 1) <= total_pages else None,
-                prev={"page": page - 1, "size": size} if (page - 1) >= 1 else None,
-            ),
+        raw_links = create_links(
+            first={"page": 1, "size": size},
+            last={"page": total_pages, "size": size} if total > 0 else {"page": 1, "size": size},
+            next={"page": page + 1, "size": size} if (page + 1) <= total_pages else None,
+            prev={"page": page - 1, "size": size} if (page - 1) >= 1 else None,
+        )
+        links = _Links(
+            first=raw_links.first or "",
+            last=raw_links.last or "",
+            self=raw_links.self or "",
+            next=raw_links.next,
+            prev=raw_links.prev,
         )
 
         return cls(

@@ -31,7 +31,7 @@ const pageDescription = computed(() => {
   if (path.includes("log")) return "日志查看功能";
   if (path.includes("monitor")) return "系统监控功能";
   if (path.includes("scheduler")) return "任务调度功能";
-  if (path.includes("plugins")) return "插件管理功能";
+
   if (path.includes("_core")) return "核心功能";
   return "功能待实现";
 });

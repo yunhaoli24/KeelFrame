@@ -6,11 +6,9 @@ from typing import Any, cast
 from fastapi import Depends, Request
 
 from backend.core.conf import settings
-from backend.common.log import log
 from backend.common.enums import MethodType, StatusType
 from backend.common.context import ctx
 from backend.common.exception import errors
-from backend.utils.import_parse import import_module_cached
 from backend.common.security.jwt import DependsJwtAuth
 
 
@@ -77,15 +75,9 @@ async def rbac_verify(request: Request, _token: str = DependsJwtAuth) -> None:
                 allow_perms.extend(menu.perms.split(","))
         if path_auth_perm not in allow_perms:
             raise errors.AuthorizationError
-    else:
-        try:
-            casbin_rbac = import_module_cached("backend.plugin.casbin_rbac.rbac")
-            casbin_verify = casbin_rbac.casbin_verify
-        except (ImportError, AttributeError) as e:
-            log.error("正在通过 casbin 执行 RBAC 权限校验, 但此插件不存在: %s", e)
-            raise errors.ServerError(msg="权限校验失败, 请联系系统管理员") from e
+        return
 
-        await casbin_verify(request)
+    raise errors.ServerError(msg="权限校验失败, 请启用角色菜单权限模式")
 
 
 # RBAC 授权依赖注入

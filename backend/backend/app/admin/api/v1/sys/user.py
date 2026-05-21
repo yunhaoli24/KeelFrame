@@ -13,6 +13,7 @@ from backend.app.admin.schema.role import GetRoleDetail
 from backend.app.admin.schema.user import (
     AddUserParam,
     UpdateUserParam,
+    GetUserInfoDetail,
     ResetPasswordParam,
     GetUserInfoWithRelationDetail,
     GetCurrentUserInfoWithRelationDetail,
@@ -38,7 +39,7 @@ async def get_userinfo(
     pk: Annotated[int, Path(description="用户 ID")],
 ) -> ResponseSchemaModel[GetUserInfoWithRelationDetail]:
     """Get Userinfo."""
-    data = await user_service.get_userinfo(db=db, pk=pk)
+    data = await user_service.get_userinfo_with_relations(db=db, pk=pk)
     return response_base.success(data=data)
 
 
@@ -72,13 +73,12 @@ async def get_users_paginated(
 
 
 @router.post("", summary="创建用户", dependencies=[DependsSuperUser])  # pyright: ignore[reportGeneralTypeIssues]
-async def create_user(
-    db: CurrentSessionTransaction, obj: AddUserParam
-) -> ResponseSchemaModel[GetUserInfoWithRelationDetail]:
+async def create_user(db: CurrentSessionTransaction, obj: AddUserParam) -> ResponseSchemaModel[GetUserInfoDetail]:
     """Create User."""
     await user_service.create(db=db, obj=obj)
+    await db.flush()
     data = await user_service.get_userinfo(db=db, username=obj.username)
-    return response_base.success(data=data)
+    return response_base.success(data=GetUserInfoDetail.model_validate(data))
 
 
 @router.put("/{pk}", summary="更新用户信息", dependencies=[DependsSuperUser])  # pyright: ignore[reportGeneralTypeIssues]

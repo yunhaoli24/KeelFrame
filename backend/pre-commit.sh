@@ -2,4 +2,4 @@
 
 set -euo pipefail
 
-bash backend/scripts/lint.sh
+uv run prek run --all-files

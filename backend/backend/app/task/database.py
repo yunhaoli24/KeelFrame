@@ -25,8 +25,8 @@ class DatabaseBackend(BaseBackend):
     # to not bombard the database with queries.
     subpolling_interval = 0.5
 
-    task_cls = Task
-    taskset_cls = TaskSet
+    task_cls: type[Task] = Task
+    taskset_cls: type[TaskSet] = TaskSet
 
     def __init__(
         self,

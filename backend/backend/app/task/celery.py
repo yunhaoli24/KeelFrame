@@ -4,7 +4,7 @@ import os
 import urllib.parse
 
 import celery_aio_pool
-from celery import celery  # pyright: ignore[reportMissingModuleSource]
+import celery.app.trace as celery_trace  # pyright: ignore[reportMissingTypeStubs]
 from celery.app.base import Celery
 
 from backend.core.conf import settings
@@ -28,8 +28,8 @@ def init_celery() -> Celery:
     # TODO: Update this work if celery version >= 6.0.0
     # https://github.com/fastapi-practices/fastapi_best_architecture/issues/321
     # https://github.com/celery/celery/issues/7874
-    celery.app.trace.build_tracer = celery_aio_pool.build_async_tracer  # pyright: ignore[reportAssignmentType]
-    celery.app.trace.reset_worker_optimizations()  # pyright: ignore[reportAssignmentType]
+    celery_trace.build_tracer = celery_aio_pool.build_async_tracer  # ty: ignore[invalid-assignment]
+    celery_trace.reset_worker_optimizations()
 
     broker_url = f"amqp://{settings.CELERY_RABBITMQ_USERNAME}:{urllib.parse.quote(settings.CELERY_RABBITMQ_PASSWORD)}@{settings.CELERY_RABBITMQ_HOST}:{settings.CELERY_RABBITMQ_PORT}/{settings.CELERY_RABBITMQ_VHOST}"
     if settings.CELERY_BROKER == "redis":

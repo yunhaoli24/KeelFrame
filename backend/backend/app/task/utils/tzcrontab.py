@@ -2,12 +2,16 @@
 
 from typing import Any
 from datetime import datetime
+from collections.abc import Iterable
 
 from celery import schedules  # pyright: ignore[reportMissingModuleSource]
 from celery.schedules import ParseException, crontab
 
 from backend.utils.timezone import timezone
 from backend.common.exception import errors
+
+
+Cronspec = int | str | Iterable[int]
 
 
 class TzAwareCrontab(schedules.crontab):
@@ -33,7 +37,7 @@ class TzAwareCrontab(schedules.crontab):
             app=app,
         )
 
-    def is_due(self, last_run_at: datetime) -> tuple[bool, int | float]:
+    def is_due(self, last_run_at: datetime) -> tuple[bool, int | float]:  # ty: ignore[invalid-method-override]
         """任务到期状态.
 
         :param last_run_at: 最后运行时间
@@ -45,9 +49,11 @@ class TzAwareCrontab(schedules.crontab):
         if due:
             rem_delta = self.remaining_estimate(self.now())
             rem = max(rem_delta.total_seconds(), 0)
-        return schedules.schedstate(is_due=due, next_value=rem)
+        return schedules.schedstate(is_due=due, next=rem)
 
-    def __reduce__(self) -> tuple[type, tuple[str, str, str, str, str], None]:
+    def __reduce__(
+        self,
+    ) -> tuple[type["TzAwareCrontab"], tuple[Cronspec, Cronspec, Cronspec, Cronspec, Cronspec], None]:
         """Reduce for pickling."""
         return (
             self.__class__,
