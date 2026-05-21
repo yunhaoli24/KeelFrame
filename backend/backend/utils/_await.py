@@ -2,13 +2,11 @@ import atexit
 import asyncio
 import weakref
 import threading
-from typing import TYPE_CHECKING, Any, Union, TypeVar
+from typing import Any, TypeVar, cast
 from functools import wraps
 from collections.abc import Callable, Awaitable, Coroutine
+from concurrent.futures import Future as ConcurrentFuture
 
-
-if TYPE_CHECKING:
-    from concurrent.futures import Future
 
 T = TypeVar("T")
 
@@ -45,7 +43,7 @@ class _TaskRunner:
         finally:
             loop.close()
 
-    def run(self, coro: Union[Coroutine[Any, Any, T], "Future[T]"]) -> T:
+    def run(self, coro: Coroutine[Any, Any, T] | asyncio.Future[T] | ConcurrentFuture[T]) -> T:
         """在后台事件循环上运行协程并返回其结果."""
         with self.__lock:
             name = f"TaskRunner-{threading.get_ident()}"
@@ -54,40 +52,56 @@ class _TaskRunner:
                 self.__thread = threading.Thread(target=self._target, daemon=True, name=name)
                 self.__thread.start()
             if asyncio.iscoroutine(coro):
-                future: Future[T] = asyncio.run_coroutine_threadsafe(coro, self.__loop)
+                future = asyncio.run_coroutine_threadsafe(coro, self.__loop)
                 return future.result()
-            future = coro
-            return future.result()
+            return coro.result()
 
 
 _runner_map: weakref.WeakValueDictionary[str, _TaskRunner] = weakref.WeakValueDictionary()
 
 
-def run_await[T](coro: Callable[..., Awaitable[T]] | Callable[..., Coroutine[Any, Any, T]]) -> Callable[..., T]:
+def run_await[T](coro: Callable[..., Awaitable[T]]) -> Callable[..., T]:
     """将协程包装在函数中，直到它执行完为止."""
 
     @wraps(coro)
     def wrapped(*args: Any, **kwargs: Any) -> T:  # noqa: ANN401
         inner = coro(*args, **kwargs)
-        if not asyncio.iscoroutine(inner) and not asyncio.isfuture(inner):
-            msg = f"Expected coroutine or future, got {type(inner)}"
-            raise TypeError(msg)
-
-        try:
-            # 如果事件循环正在运行，则使用任务调用
-            asyncio.get_running_loop()
-            name = f"TaskRunner-{threading.get_ident()}"
-            if name not in _runner_map:
-                _runner_map[name] = _TaskRunner()
-            return _runner_map[name].run(inner)  # type: ignore[arg-type]
-        except RuntimeError:
-            # 如果没有，则创建一个新的事件循环
+        if asyncio.iscoroutine(inner):
+            coroutine = cast("Coroutine[Any, Any, T]", inner)
             try:
-                loop = asyncio.get_event_loop()
+                # 如果事件循环正在运行，则使用任务调用
+                asyncio.get_running_loop()
+                name = f"TaskRunner-{threading.get_ident()}"
+                if name not in _runner_map:
+                    _runner_map[name] = _TaskRunner()
+                return _runner_map[name].run(coroutine)
             except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            return loop.run_until_complete(inner)
+                # 如果没有，则创建一个新的事件循环
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                return loop.run_until_complete(coroutine)
+
+        if asyncio.isfuture(inner):
+            future = cast("asyncio.Future[T]", inner)
+            try:
+                asyncio.get_running_loop()
+                name = f"TaskRunner-{threading.get_ident()}"
+                if name not in _runner_map:
+                    _runner_map[name] = _TaskRunner()
+                return _runner_map[name].run(future)
+            except RuntimeError:
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                return loop.run_until_complete(future)
+
+        msg = f"Expected coroutine or future, got {type(inner)}"
+        raise TypeError(msg)
 
     wrapped.__doc__ = coro.__doc__
     return wrapped

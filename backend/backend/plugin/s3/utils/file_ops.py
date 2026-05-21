@@ -4,6 +4,7 @@ from fastapi import UploadFile
 from opendal import AsyncOperator
 
 from backend.plugin.s3.model import S3Storage
+from backend.common.exception import errors
 
 
 def get_operator(
@@ -30,13 +31,17 @@ def get_operator(
     )
 
 
-async def write_file(s3_storage: S3Storage, file: UploadFile) -> None:
+async def write_file(s3_storage: S3Storage, file: UploadFile) -> str:
     """写入文件.
 
     :param s3_storage: S3 存储
     :param file: 上传文件
     :return:
     """
+    filename = file.filename
+    if not filename:
+        raise errors.RequestError(msg="文件名不能为空")
+
     op = get_operator(
         s3_storage.endpoint,
         s3_storage.access_key,
@@ -46,4 +51,5 @@ async def write_file(s3_storage: S3Storage, file: UploadFile) -> None:
         s3_storage.region or "any",
     )
     contents = await file.read()
-    await op.write(file.filename, contents)
+    await op.write(filename, contents)
+    return filename

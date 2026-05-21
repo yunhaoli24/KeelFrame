@@ -72,7 +72,9 @@ def timer(func: Callable[..., Any]) -> Callable[..., Any]:
         else:
             unit, factor = "ms", 1000
 
-        log.info(f"{_func.__module__}.{_func.__name__} | {elapsed * factor:.3f} {unit}")
+        module = getattr(_func, "__module__", type(_func).__module__)
+        name = getattr(_func, "__name__", type(_func).__name__)
+        log.info(f"{module}.{name} | {elapsed * factor:.3f} {unit}")
 
     if inspect.iscoroutinefunction(func):
         return async_wrapper

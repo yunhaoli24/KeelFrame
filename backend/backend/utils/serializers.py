@@ -373,9 +373,13 @@ def select_join_serialize(
 
         if not return_as_dict:
             all_fields = list(final_result_data.keys())
-            result_type = namedtuple("Result", list(all_fields))  # type: ignore[misc]  # noqa: PYI024
-            final_result_list.append(result_type(**final_result_data))
+            Result = namedtuple("Result", list(all_fields))  # type: ignore[misc]  # noqa: PYI024
+            final_result_list.append(Result(**final_result_data))
         else:
             final_result_list.append(final_result_data)
 
-    return final_result_list[0] if len(final_result_list) == 1 else final_result_list  # type: ignore[return-value]
+    if len(final_result_list) == 1:
+        return final_result_list[0]
+    if return_as_dict:
+        return cast("list[dict[str, Any]]", final_result_list)
+    return cast("list[tuple[Any, ...]]", final_result_list)

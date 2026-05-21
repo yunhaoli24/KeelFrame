@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import json
 import math
+import heapq
 import asyncio
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
+from builtins import min as builtin_min
 from datetime import datetime, timedelta
 from multiprocessing.util import Finalize
 
 from celery import schedules, current_app  # pyright: ignore[reportMissingModuleSource]
 from sqlalchemy import select
-from celery.beat import Scheduler, ScheduleEntry
+from celery.beat import Scheduler, ScheduleEntry, event_t
 from celery.signals import beat_init
 from sqlalchemy.exc import DatabaseError, InterfaceError
 from celery.utils.log import get_logger
@@ -43,6 +45,10 @@ logger = get_logger("fba.schedulers")
 
 class ModelEntry(ScheduleEntry):
     """任务调度实体."""
+
+    schedule: schedules.schedule | TzAwareCrontab
+    last_run_at: datetime
+    name: str
 
     def __init__(self, model: TaskScheduler, app: Any = None) -> None:  # noqa: ANN401
         """Initialize model entry."""
@@ -95,12 +101,15 @@ class ModelEntry(ScheduleEntry):
             elif isinstance(expires, datetime):
                 self.options["expires"] = timezone.from_datetime(expires)
 
-        if not model.last_run_time:
-            model.last_run_time = timezone.now()
+        last_run_time = model.last_run_time
+        if last_run_time is None:
+            last_run_time = timezone.now()
+            model.last_run_time = last_run_time
             if model.start_time:
-                model.last_run_time = timezone.from_datetime(model.start_time) - timedelta(days=365)
+                last_run_time = timezone.from_datetime(model.start_time) - timedelta(days=365)
+                model.last_run_time = last_run_time
 
-        self.last_run_at = timezone.from_datetime(model.last_run_time)
+        self.last_run_at = timezone.from_datetime(last_run_time)
         self.options["periodic_task_name"] = model.name
         self.model = model
 
@@ -119,7 +128,7 @@ class ModelEntry(ScheduleEntry):
         """任务到期状态."""
         if not self.model.enabled:
             # 重新启用时延迟 5 秒
-            return schedules.schedstate(is_due=False, next_value=5)
+            return schedules.schedstate(is_due=False, next=5)
 
         # 仅在 'start_time' 之后运行
         if self.model.start_time is not None:
@@ -127,7 +136,7 @@ class ModelEntry(ScheduleEntry):
             start_time = timezone.from_datetime(self.model.start_time)
             if now < start_time:
                 delay = math.ceil((start_time - now).total_seconds())
-                return schedules.schedstate(is_due=False, next_value=delay)
+                return schedules.schedstate(is_due=False, next=delay)
 
         # 一次性任务
         if self.model.one_off and self.model.enabled and self.model.total_run_count > 0:
@@ -136,13 +145,13 @@ class ModelEntry(ScheduleEntry):
             self.model.no_changes = False
             save_fields = ("enabled",)
             run_await(self.save)(save_fields)
-            return schedules.schedstate(is_due=False, next_value=1000000000)  # 高延迟，避免重新检查
+            return schedules.schedstate(is_due=False, next=1000000000)  # 高延迟，避免重新检查
 
-        return self.schedule.is_due(self.last_run_at)
+        return self.schedule.is_due(self.last_run_at)  # ty: ignore[invalid-return-type]
 
-    def __next__(self):  # noqa: ANN204
+    def __next__(self, last_run_at: datetime | None = None) -> ModelEntry:
         """Get next entry."""
-        self.model.last_run_time = timezone.now()
+        self.model.last_run_time = last_run_at or timezone.now()
         self.model.total_run_count += 1
         self.model.no_changes = True
         return self.__class__(self.model)
@@ -185,12 +194,12 @@ class ModelEntry(ScheduleEntry):
     @staticmethod
     async def to_model_schedule(name: str, task: str, schedule: schedules.schedule | TzAwareCrontab) -> TaskScheduler:
         """Convert to model schedule."""
-        schedule = schedules.maybe_schedule(schedule)
+        model_schedule = cast("schedules.schedule | TzAwareCrontab", schedules.maybe_schedule(schedule))
 
         async with async_db_session() as db:
             spec: dict[str, Any]
-            if isinstance(schedule, schedules.crontab):
-                crontab = f"{schedule._orig_minute} {schedule._orig_hour} {schedule._orig_day_of_week} {schedule._orig_day_of_month} {schedule._orig_month_of_year}"  # noqa: E501, SLF001
+            if isinstance(model_schedule, schedules.crontab):
+                crontab = f"{model_schedule._orig_minute} {model_schedule._orig_hour} {model_schedule._orig_day_of_week} {model_schedule._orig_day_of_month} {model_schedule._orig_month_of_year}"  # noqa: E501, SLF001
                 crontab_verify(crontab)
                 spec = {
                     "name": name,
@@ -204,7 +213,7 @@ class ModelEntry(ScheduleEntry):
                     create_param = CreateTaskSchedulerParam.model_validate({"task": task, **spec})
                     obj = TaskScheduler(**create_param.model_dump())
             else:
-                every = max(schedule.run_every.total_seconds(), 0)
+                every = max(model_schedule.run_every.total_seconds(), 0)
                 spec = {
                     "name": name,
                     "type": TaskSchedulerType.INTERVAL.value,
@@ -280,7 +289,7 @@ class DatabaseScheduler(Scheduler):
 
     Entry = ModelEntry
 
-    _schedule = None
+    _schedule: dict[str, ModelEntry] | None = None
     _last_update = None
     _initial_read = True
     _heap_invalidated = False
@@ -356,13 +365,19 @@ class DatabaseScheduler(Scheduler):
             # 请稍后重试（仅针对失败的）
             self._dirty |= failed
 
-    def tick(self, **_kwargs: Any) -> float:  # noqa: ANN401
+    def tick(
+        self,
+        event_t: Any = event_t,  # noqa: ANN401
+        min: Any = builtin_min,  # noqa: A002, ANN401
+        heappop: Any = heapq.heappop,  # noqa: ANN401
+        heappush: Any = heapq.heappush,  # noqa: ANN401
+    ) -> float:
         """重写父函数."""
         if self.lock:
             logger.debug("beat: Extending lock...")
             run_await(self.lock.extend)(DEFAULT_MAX_LOCK_TIMEOUT, replace_ttl=True)
 
-        return super().tick(**_kwargs)
+        return super().tick(event_t=event_t, min=min, heappop=heappop, heappush=heappush)
 
     def close(self) -> None:
         """重写父函数."""
@@ -374,13 +389,13 @@ class DatabaseScheduler(Scheduler):
 
         super().close()
 
-    def update_from_dict(self, beat_dict: dict[str, dict[str, Any]]) -> None:
+    def update_from_dict(self, dict_: dict[str, dict[str, Any]]) -> None:
         """重写父函数."""
         s: dict[str, ModelEntry] = {}
         name: str | None = None
 
         try:
-            for name, entry_fields in beat_dict.items():
+            for name, entry_fields in dict_.items():
                 entry = run_await(self.Entry.from_entry)(name, app=self.app, **entry_fields)
                 if entry.model.enabled:
                     s[name] = entry
@@ -443,7 +458,9 @@ class DatabaseScheduler(Scheduler):
             )
 
         # logger.debug(self._schedule)
-        return self._schedule  # type: ignore[return-value]
+        if self._schedule is None:
+            self._schedule = {}
+        return self._schedule
 
 
 @beat_init.connect  # pyright: ignore[reportGeneralTypeIssues]

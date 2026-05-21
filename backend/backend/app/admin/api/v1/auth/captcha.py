@@ -37,6 +37,6 @@ async def get_captcha(db: CurrentSession) -> ResponseSchemaModel[GetCaptchaDetai
         is_enabled=settings.LOGIN_CAPTCHA_ENABLED,
         expire_seconds=settings.LOGIN_CAPTCHA_EXPIRE_SECONDS,
         uuid=captcha_uuid,
-        image=img,
+        image=img,  # ty: ignore[invalid-argument-type]
     )
     return response_base.success(data=data)

@@ -56,10 +56,10 @@ def default_formatter(record: logging.LogRecord) -> str:
 def request_id_filter(record: logging.LogRecord | dict[str, Any]) -> logging.LogRecord | dict[str, Any]:
     """请求 ID 过滤器."""
     rid = get_request_trace_id()
-    if isinstance(record, dict):
-        record["request_id"] = rid[: settings.TRACE_ID_LOG_LENGTH]
-    else:
+    if isinstance(record, logging.LogRecord):
         record.request_id = rid[: settings.TRACE_ID_LOG_LENGTH]
+    else:
+        record["request_id"] = rid[: settings.TRACE_ID_LOG_LENGTH]
     return record
 
 

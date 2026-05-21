@@ -18,7 +18,6 @@ from starlette.concurrency import run_in_threadpool
 from packaging.requirements import Requirement
 
 from backend.core.conf import settings
-from backend.app.router import router as main_router
 from backend.common.log import log
 from backend.common.enums import StatusType, DataBaseType
 from backend.utils._await import run_await
@@ -259,6 +258,8 @@ def inject_app_router(plugin: dict[str, Any], target_router: APIRouter) -> None:
 
 def build_final_router() -> APIRouter:
     """构建最终路由."""
+    from backend.app.router import router as main_router  # noqa: PLC0415
+
     extend_plugins, app_plugins = parse_plugin_config()
 
     for plugin in extend_plugins:
@@ -273,7 +274,7 @@ def build_final_router() -> APIRouter:
 def _ensure_pip_available() -> bool:
     """确保 pip 在虚拟环境中可用."""
     try:
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(
             [sys.executable, "-m", "pip", "--version"],
             check=False,
             capture_output=True,
@@ -286,12 +287,12 @@ def _ensure_pip_available() -> bool:
 
     # 尝试使用 ensurepip
     try:
-        subprocess.check_call(  # noqa: S603
+        subprocess.check_call(
             [sys.executable, "-m", "ensurepip", "--default-pip"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(
             [sys.executable, "-m", "pip", "--version"],
             check=False,
             capture_output=True,
@@ -323,7 +324,7 @@ def _ensure_pip_available() -> bool:
 
         try:
             subprocess.check_call([sys.executable, temp_file], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # noqa: S603
-            result = subprocess.run(  # noqa: S603
+            result = subprocess.run(
                 [sys.executable, "-m", "pip", "--version"],
                 check=False,
                 capture_output=True,

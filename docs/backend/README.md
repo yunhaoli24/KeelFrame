@@ -8,4 +8,4 @@
 ## 入口
 
 - 全栈开发启动与进程管理：`docs/backend/dev-startup.md`
-- 后端 lint 与 pyright 约束：`docs/backend/lint-pyright.md`
+- 后端 lint、pyright 与 ty 约束：`docs/backend/lint-pyright.md`

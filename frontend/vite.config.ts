@@ -6,7 +6,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import AutoImport from "unplugin-auto-import/vite";
 import Component from "unplugin-vue-components/vite";
 import VueRouter from "vue-router/vite";
-import { defineConfig } from "vite";
+import { defineConfig } from "vite-plus";
 import vueDevTools from "vite-plugin-vue-devtools";
 import Layouts from "vite-plugin-vue-layouts";
 
@@ -45,9 +45,10 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-  esbuild: {
-    drop: ["debugger"],
-    pure: ["console.log"],
+  oxc: {
+    drop: {
+      debugger: true,
+    },
   },
   server: {
     proxy: {
@@ -56,5 +57,21 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  lint: {
+    ignorePatterns: ["dist/**", "*.d.ts"],
+    options: {
+      typeAware: true,
+      typeCheck: false,
+    },
+  },
+  fmt: {
+    ignorePatterns: ["dist/**", "*.d.ts"],
+  },
+  test: {
+    passWithNoTests: true,
+  },
+  staged: {
+    "*": "vp check --fix",
   },
 });

@@ -11,7 +11,7 @@ from pydantic import Field, BaseModel
 from fastapi_pagination import pagination_ctx
 from fastapi_pagination.bases import RawParams, AbstractPage, AbstractParams
 from fastapi_pagination.links.bases import create_links
-from fastapi_pagination.ext.sqlalchemy import apaginate
+from fastapi_pagination.ext.sqlalchemy import apaginate  # pyright: ignore[reportUnknownVariableType]
 
 
 if TYPE_CHECKING:

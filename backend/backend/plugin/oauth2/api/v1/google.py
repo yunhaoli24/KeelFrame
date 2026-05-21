@@ -5,7 +5,10 @@ import uuid
 from typing import Any, Annotated
 
 from fastapi import Depends, Response, APIRouter, BackgroundTasks
-from fastapi_oauth20 import GoogleOAuth20, FastAPIOAuth20  # pyright: ignore[reportMissingModuleSource]
+from fastapi_oauth20 import (  # ty: ignore[unresolved-import]  # pyright: ignore[reportMissingModuleSource]
+    GoogleOAuth20,
+    FastAPIOAuth20,
+)
 from starlette.responses import RedirectResponse
 
 from backend.core.conf import settings

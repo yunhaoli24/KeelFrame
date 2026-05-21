@@ -2,26 +2,23 @@ default_language_version:
     python: '>= 3.10'
 
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: end-of-file-fixer
-      - id: check-json
-      - id: check-yaml
-      - id: check-toml
-
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.15.4
-    hooks:
-      - id: ruff-check
-        args:
-          # https://github.com/astral-sh/ruff-pre-commit/issues/64
-          - '--fix'
-          - '--unsafe-fixes'
-      - id: ruff-format
-
   - repo: local
     hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check
+        language: system
+        types_or: [python, pyi]
+        args:
+          - '--fix'
+          - '--unsafe-fixes'
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types_or: [python, pyi]
+
       - id: mypy
         name: mypy
         entry: uv run mypy
@@ -30,8 +27,6 @@ repos:
         pass_filenames: false
         args: [backend]
 
-  - repo: local
-    hooks:
       - id: pyright
         name: pyright
         entry: uv run pyright
@@ -40,11 +35,25 @@ repos:
         args:
           - --threads=4
 
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.10.6
-    hooks:
+      - id: ty
+        name: ty
+        entry: uv run ty check
+        language: system
+        types_or: [python]
+        pass_filenames: false
+        args: [backend]
+
       - id: uv-lock
+        name: uv lock
+        entry: uv lock
+        language: system
+        pass_filenames: false
+
       - id: uv-export
+        name: uv export
+        entry: uv export
+        language: system
+        pass_filenames: false
         args:
           - '-o'
           - 'requirements.txt'

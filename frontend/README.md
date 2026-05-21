@@ -1,129 +1,40 @@
-# Shadcn Vue Admin
+# Frontend
 
-[![code style](https://antfu.me/badge-code-style.svg)](https://github.com/antfu/eslint-config)
+这是 RBAC 全栈模板的前端管理台，负责登录、路由守卫、系统管理页面、数据表格、表单交互和后端 API 调用。
 
-Forked from [shadcn-admin](https://github.com/satnaing/shadcn-admin)
+## 当前定位
 
-管理仪表板 UI 采用 Shadcn-vue、Vue3 和 Vite 精心打造。构建时充分考虑了响应能力和可访问性。
+- 提供后台管理系统的基础布局、侧边栏、导航、主题和错误页。
+- 提供用户、角色、菜单、部门、数据权限等 RBAC 管理页面。
+- 提供登录流程、认证状态管理和路由访问控制。
+- 提供统一 API 服务目录，便于业务模块继续扩展。
+- 作为后续业务系统的前端壳子，业务页面应沿用当前页面、服务、组件和状态管理结构。
 
-![cover](public/shadcn-vue-admin.png)
+## 目录入口
 
-这是一个起始（模板）项目，后续会增加更多组件。
-
-## 特性
-
-- [x] 亮色|暗色模式
-- [x] 全局搜索命令
-- [x] shadcn-ui 侧边栏
-- [x] 8+ 页面
-- [x] 精美的自定义组件
-- [x] 自动生成路由
-
-## 技术栈
-
-ui:
-
-- [inspira-ui](https://inspira-ui.com/components/box-reveal)
-- [shadcn-vue](https://www.shadcn-vue.com)
-
-Build Tool:
-
-- [Vite](https://cn.vitejs.dev/)
-
-State Management:
-
-- [pinia](https://pinia.vuejs.org/api/pinia/)
-- [persistedstate](https://prazdevs.github.io/pinia-plugin-persistedstate/guide/limitations.html)
-
-Styling:
-
-- [Tailwind CSS](https://tailwindcss.com/)
-
-Unplugins:
-
-- [Auto Import](https://github.com/antfu/unplugin-auto-import)
-- [Components](https://github.com/antfu/unplugin-vue-components)
-- [vite-plugin-pages](https://github.com/hannoeru/vite-plugin-pages) [弃用]
-- [Vue Router auto-routes](https://router.vuejs.org/guide/advanced/typed-routes.html)
-- [Vite Plugin Vue Layouts](https://github.com/JohnCampionJr/vite-plugin-vue-layouts)
-- [Vite Plugin Vue Devtools](https://github.com/webfansplz/vite-plugin-vue-devtools)
-
-Icons:
-
-- [Lucide](https://lucide.dev/)
-
-Linting:
-
-- [ESLint](https://eslint.org/)
-- [antfu/eslint-config](https://github.com/antfu/eslint-config)
-
-Charts:
-
-- [vue-chrts](https://github.com/dennisadriaans/vue-chrts)
-  > 如果您使用 tailwindcss v4，shadcn-vue charts 已被标记为 'Legacy'。我们现在使用这个库来替代它。
-
-## 本地运行
-
-克隆项目至本地
-
-```bash
-git clone https://github.com/Whbbit1999/shadcn-vue-admin.git
+```text
+frontend/
+├── src/pages/             # 页面路由入口
+├── src/pages/system/      # RBAC 与系统管理页面
+├── src/services/api/      # 后端 API 调用封装
+├── src/components/        # 通用组件和业务组件
+├── src/composables/       # 组合式逻辑
+├── src/stores/            # Pinia 状态
+├── src/router/            # 路由与守卫
+└── src/plugins/           # 前端插件初始化
 ```
 
-进入项目所在目录
+## 开发入口
 
-```bash
-cd shadcn-vue-admin
-```
+- 全栈启动：在仓库根目录运行 `./dev.sh`
+- 前端单独启动：`pnpm run dev`
+- 前端检查：`pnpm run check`
+- 前端测试：`pnpm run test`
+- 前端构建：`pnpm run build`
 
-安装依赖
+## 约束
 
-```bash
-pnpm install
-```
-
-启动项目
-
-```bash
-pnpm dev
-```
-
-## Tips
-
-### 主题定制
-
-如果您需要更改网站样式，可以使用[tweakcn](https://tweakcn.com/editor/theme)网站提供的预设样式。你只需要将 tweakcn 提供的 css 样式 复制到 `index.css` 中，改动 `:root` `:dark` 和 `@theme inline` 部分即可。
-
-### 在嵌套目录中没有 `index.vue` 且不想使用默认的布局
-
-比如，我不想让 `pages/errors/` 和 `pages/auth/` 文件夹中的页面使用默认的布局， 我需要在 `pages/` 中创建一个与目录同名的文件，`src/pages/errors.vue` `src/pages/auth.vue`，文件内容如下。
-
-```vue
-<template>
-  <router-view />
-</template>
-
-<route lang="yml">
-meta:
-  layout: false # 这里是你要的布局，我这里使用 false 表示它不用布局组件
-</route>
-```
-
-> 这会导致多生成一个路由，这个示例中，如果你根据上述步骤操作后，会生成多余的 `/error/` 和 `/auth/` 路由，并且这两个页面会是空白页。
-> 如果你不需要它们，且该目录下没有 `index.vue`，可以在目录中创建一个 `index.vue`文件并将其重定向至任何页面。
-> 我这里统一将其重定向至 `/errors/404`，你可以根据你的情况自己处理。其中 `index.vue`文件的内容如下：
-
-```vue
-<script lang="ts" setup>
-const router = useRouter();
-router.replace({ name: "/errors/404" });
-</script>
-```
-
-## 作者
-
-由 [Whbbit](https://github.com/Whbbit1999)创建, 设计来自 [shadcn-admin](https://github.com/satnaing/shadcn-admin)
-
-## 许可证
-
-[MIT](https://github.com/Whbbit1999/shadcn-vue-admin/blob/main/LICENSE)
+- API 调用优先放在 `src/services/api/`，页面通过服务层访问后端。
+- 新增页面优先复用现有布局、数据表格、表单和对话框组件。
+- 认证相关逻辑集中维护在 `src/stores/auth.ts`、`src/composables/use-auth.ts` 和 `src/router/guard/`。
+- 新增模板能力时，同步补齐页面、服务封装和前端测试。

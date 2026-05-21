@@ -9,7 +9,6 @@ from functools import lru_cache
 import sqlalchemy as sa
 
 from backend.common.log import log
-from backend.plugin.tools import get_plugin_models
 from backend.core.path_conf import BASE_PATH
 from backend.common.exception import errors
 
@@ -81,4 +80,6 @@ def get_app_models() -> list[object]:
 @lru_cache
 def get_all_models() -> list[object]:
     """获取所有模型类."""
+    from backend.plugin.tools import get_plugin_models  # noqa: PLC0415
+
     return get_app_models() + get_plugin_models()

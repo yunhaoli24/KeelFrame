@@ -29,7 +29,7 @@ class Task(MappedBase):
     result: Mapped[Any | None] = mapped_column(PickleType, default=None)
     date_done: Mapped[datetime | None] = mapped_column(
         TimeZone,
-        default_factory=timezone.now,
+        default=timezone.now,
         onupdate=timezone.now,
         nullable=True,
     )
@@ -104,7 +104,7 @@ class TaskSet(MappedBase):
     )
     taskset_id: Mapped[str] = mapped_column(sa.String(155), unique=True)
     result: Mapped[Any | None] = mapped_column(PickleType, default=None)
-    date_done: Mapped[datetime | None] = mapped_column(TimeZone, default_factory=timezone.now, nullable=True)
+    date_done: Mapped[datetime | None] = mapped_column(TimeZone, default=timezone.now, nullable=True)
 
     def __init__(self, taskset_id: str, result: Any) -> None:  # noqa: ANN401
         """Initialize task set result."""

@@ -34,7 +34,7 @@ async def upload_s3_files(
     if not s3_storage:
         raise errors.NotFoundError(msg="S3 存储不存在")
     upload_file_verify(file)
-    await write_file(s3_storage, file)
+    filename = await write_file(s3_storage, file)
 
     bucket_path = f"/{s3_storage.bucket}"
     if s3_storage.prefix:
@@ -43,5 +43,5 @@ async def upload_s3_files(
     else:
         root = bucket_path
 
-    url = f"{root.rstrip('/')}/{file.filename}"
+    url = f"{root.rstrip('/')}/{filename}"
     return response_base.success(data={"url": url})
