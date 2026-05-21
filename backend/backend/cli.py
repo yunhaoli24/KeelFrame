@@ -11,20 +11,22 @@ from collections.abc import Callable
 import anyio
 import cappa
 import granian
+from alembic import command as alembic_command
 from rich.text import Text
 from rich.panel import Panel
 from sqlalchemy import text
 from watchfiles import PythonFilter
 from rich.prompt import Prompt
 from cappa.output import error_format
+from alembic.config import Config as AlembicConfig
 
 from backend import __version__
 from backend.core.conf import settings
-from backend.database.db import drop_tables, create_tables, async_db_session
+from backend.database.db import drop_tables, async_db_session
 from backend.common.enums import DataBaseType
 from backend.plugin.tools import get_plugins, get_plugin_sql
 from backend.utils.console import console
-from backend.core.path_conf import BASE_PATH
+from backend.core.path_conf import BASE_PATH, ALEMBIC_DIR, ALEMBIC_INI
 from backend.database.redis import redis_client
 from backend.utils.file_ops import parse_sql_script, install_git_plugin, install_zip_plugin
 from backend.common.exception.errors import BaseExceptionError
@@ -46,6 +48,18 @@ class CustomReloadFilter(PythonFilter):
     def __init__(self) -> None:
         """Init  ."""
         super().__init__(extra_extensions=[".json", ".yaml", ".yml"])
+
+
+def get_alembic_config() -> AlembicConfig:
+    """Get Alembic config rooted at the backend package directory."""
+    config = AlembicConfig(str(ALEMBIC_INI))
+    config.set_main_option("script_location", str(ALEMBIC_DIR))
+    return config
+
+
+def migrate_database(revision: str = "head") -> None:
+    """Apply database migrations."""
+    alembic_command.upgrade(get_alembic_config(), revision)
 
 
 async def init() -> None:
@@ -83,7 +97,8 @@ async def init() -> None:
             await redis_client.delete_prefix(settings.TOKEN_REDIS_PREFIX)
             await redis_client.delete_prefix(settings.TOKEN_REFRESH_REDIS_PREFIX)
             console.print("创建数据库表", style="white")
-            await create_tables()
+            await drop_alembic_version_table()
+            await asyncio.to_thread(migrate_database)
             console.print("执行 SQL 脚本", style="white")
             sql_scripts = await get_sql_scripts()
             for sql_script in sql_scripts:
@@ -249,6 +264,12 @@ async def execute_sql_scripts(sql_scripts: str, *, is_init: bool = False) -> Non
         console.print("SQL 脚本已执行完成", style="bold green")
 
 
+async def drop_alembic_version_table() -> None:
+    """Drop Alembic version state for destructive project initialization."""
+    async with async_db_session.begin() as db:
+        await db.execute(text("DROP TABLE IF EXISTS alembic_version"))
+
+
 @typed_cappa_command(help="初始化 fba 项目", default_long=True)
 @dataclass
 class Init:
@@ -257,6 +278,21 @@ class Init:
     async def __call__(self) -> None:
         """Call  ."""
         await init()
+
+
+@typed_cappa_command(help="执行数据库迁移", default_long=True)
+@dataclass
+class Migrate:
+    """执行数据库迁移."""
+
+    revision: Annotated[
+        str,
+        cappa.Arg(default="head", help="目标 Alembic revision"),
+    ]
+
+    async def __call__(self) -> None:
+        """Call  ."""
+        await asyncio.to_thread(migrate_database, self.revision)
 
 
 @typed_cappa_command(help="运行 API 服务", default_long=True)
@@ -383,7 +419,7 @@ class FbaCli:
         str,
         cappa.Arg(value_name="PATH", default="", show_default=False, help="在事务中执行 SQL 脚本"),
     ]
-    subcmd: cappa.Subcommands[Init | Run | Celery | Add | None] = None
+    subcmd: cappa.Subcommands[Init | Migrate | Run | Celery | Add | None] = None
 
     async def __call__(self) -> None:
         """Call  ."""

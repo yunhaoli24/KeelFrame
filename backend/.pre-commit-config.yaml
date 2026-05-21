@@ -32,8 +32,10 @@ repos:
         entry: uv run pyright
         language: system
         types_or: [python]
+        pass_filenames: false
         args:
           - --threads=4
+          - backend
 
       - id: ty
         name: ty

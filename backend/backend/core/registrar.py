@@ -19,7 +19,6 @@ from backend import __version__
 from backend.core.conf import settings
 from backend.common.log import setup_logging, set_custom_logfile
 from backend.utils.otel import init_otel
-from backend.database.db import create_tables
 from backend.plugin.tools import build_final_router
 from backend.utils.openapi import simplify_operation_ids
 from backend.core.path_conf import STATIC_DIR, UPLOAD_DIR
@@ -43,9 +42,6 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None]:  # noqa: ARG001
     :param app: FastAPI 应用实例
     :return:
     """
-    # 创建数据库表
-    await create_tables()
-
     # 初始化 redis
     await redis_client.open()
 

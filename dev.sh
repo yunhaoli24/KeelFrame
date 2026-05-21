@@ -81,6 +81,12 @@ fi
 echo "Backend API port: ${API_PORT}"
 echo "Flower port: ${FLOWER_PORT}"
 
+echo "Applying backend database migrations..."
+(
+  cd "${BACKEND_DIR}"
+  exec uv run fba migrate
+)
+
 (
   cd "${FRONTEND_DIR}"
   exec pnpm run dev

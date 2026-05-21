@@ -9,9 +9,7 @@ from backend.core.conf import settings
 from backend.database.redis import redis_client
 from backend.common.exception import errors
 from backend.plugin.oauth2.enums import UserSocialType, UserSocialAuthType
-from backend.plugin.oauth2.api.v1.github import github_client
-from backend.plugin.oauth2.api.v1.google import google_client
-from backend.plugin.oauth2.api.v1.linux_do import linux_do_client
+from backend.plugin.oauth2.clients import github_client, google_client, linux_do_client
 from backend.plugin.oauth2.schema.user_social import CreateUserSocialParam
 from backend.plugin.oauth2.crud.crud_user_social import user_social_dao
 

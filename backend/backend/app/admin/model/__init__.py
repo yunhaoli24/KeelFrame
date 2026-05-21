@@ -9,6 +9,7 @@ from backend.app.admin.model.data_rule import DataRule
 from backend.app.admin.model.login_log import LoginLog
 from backend.app.admin.model.opera_log import OperaLog
 from backend.app.admin.model.data_scope import DataScope
+from backend.app.admin.model.user_password_history import UserPasswordHistory
 
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
     "OperaLog",
     "Role",
     "User",
+    "UserPasswordHistory",
     "data_scope_rule",
     "role_data_scope",
     "role_menu",

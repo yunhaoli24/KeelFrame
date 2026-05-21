@@ -5,24 +5,20 @@ import uuid
 from typing import Any, Annotated
 
 from fastapi import Depends, Response, APIRouter, BackgroundTasks
-from fastapi_oauth20 import (  # ty: ignore[unresolved-import]  # pyright: ignore[reportMissingModuleSource]
-    GitHubOAuth20,
-    FastAPIOAuth20,
-)
+from fastapi_oauth20 import FastAPIOAuth20  # pyright: ignore[reportMissingModuleSource]
 from starlette.responses import RedirectResponse
 
 from backend.core.conf import settings
 from backend.database.db import CurrentSessionTransaction
 from backend.database.redis import redis_client
 from backend.plugin.oauth2.enums import UserSocialType, UserSocialAuthType
+from backend.plugin.oauth2.clients import github_client
 from backend.common.security.limiter import create_rate_limiter
 from backend.common.response.response_schema import ResponseSchemaModel, response_base
 from backend.plugin.oauth2.service.oauth2_service import oauth2_service
 
 
 router = APIRouter()
-
-github_client = GitHubOAuth20(settings.OAUTH2_GITHUB_CLIENT_ID, settings.OAUTH2_GITHUB_CLIENT_SECRET)
 
 
 @router.get("", summary="获取 Github 授权链接")  # pyright: ignore[reportGeneralTypeIssues]
