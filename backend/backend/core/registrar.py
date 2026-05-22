@@ -9,7 +9,6 @@ import socketio
 import prometheus_client
 from fastapi import Depends, FastAPI
 from fastapi_pagination import add_pagination
-from starlette.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from starlette_context.plugins import RequestIdPlugin
 from starlette_context.middleware import ContextMiddleware
@@ -20,7 +19,6 @@ from backend.core.conf import settings
 from backend.common.log import setup_logging, set_custom_logfile
 from backend.utils.otel import init_otel
 from backend.utils.openapi import simplify_operation_ids
-from backend.core.path_conf import STATIC_DIR, UPLOAD_DIR
 from backend.database.redis import redis_client
 from backend.utils.trace_id import OtelTraceIdPlugin
 from backend.utils.demo_site import demo_site
@@ -70,7 +68,6 @@ def register_app() -> FastAPI:
     # 注册组件
     register_logger()
     register_socket_app(app)
-    register_static_file(app)
     register_middleware(app)
     register_router(app)
     register_page(app)
@@ -86,22 +83,6 @@ def register_logger() -> None:
     """注册日志."""
     setup_logging()
     set_custom_logfile()
-
-
-def register_static_file(app: FastAPI) -> None:
-    """注册静态资源服务.
-
-    :param app: FastAPI 应用实例
-    :return:
-    """
-    # 上传静态资源
-    if not UPLOAD_DIR.exists():
-        UPLOAD_DIR.mkdir(parents=True)
-    app.mount("/static/upload", StaticFiles(directory=UPLOAD_DIR), name="upload")
-
-    # 固有静态资源
-    if settings.FASTAPI_STATIC_FILES:
-        app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 def register_middleware(app: FastAPI) -> None:

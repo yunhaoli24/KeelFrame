@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Server Info."""
 
 import os

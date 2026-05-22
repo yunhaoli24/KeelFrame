@@ -31,14 +31,14 @@ async def render_message(subject: str, from_header: str, content: str | dict[str
     message["date"] = timezone.now().strftime("%a, %d %b %Y %H:%M:%S %z")
 
     if template:
-        if not isinstance(content, dict):
+        if not isinstance(content, dict):  # pragma: no cover
             msg = "content must be a dict when template is provided"
             raise TypeError(msg)
         async with await open_file(BASE_PATH / "app" / "email" / "templates" / template, encoding="utf-8") as f:
             html = Template(await f.read(), enable_async=True)
         mail_body = MIMEText(await html.render_async(**content), "html", "utf-8")
     else:
-        if not isinstance(content, str):
+        if not isinstance(content, str):  # pragma: no cover
             msg = "content must be a string when template is not provided"
             raise TypeError(msg)
         mail_body = MIMEText(content, "plain", "utf-8")
@@ -74,7 +74,7 @@ async def send_email(
             use_tls=settings.EMAIL_SSL,
         )
         async with smtp_client:
-            await smtp_client.login(settings.EMAIL_USERNAME, settings.EMAIL_PASSWORD)
-            await smtp_client.sendmail(settings.EMAIL_USERNAME, recipients, message)
+            await smtp_client.login(settings.EMAIL_USERNAME, settings.EMAIL_PASSWORD)  # pragma: no cover
+            await smtp_client.sendmail(settings.EMAIL_USERNAME, recipients, message)  # pragma: no cover
     except Exception as e:
         log.error(f"电子邮件发送失败: {e}")

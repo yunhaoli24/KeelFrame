@@ -22,7 +22,6 @@ from backend.app.admin.model import (
 )
 from backend.app.config.model import Config
 from backend.app.notice.model import Notice
-from backend.app.oauth2.model import UserSocial
 
 
 ALL_MODELS: tuple[object, ...] = (
@@ -42,7 +41,6 @@ ALL_MODELS: tuple[object, ...] = (
     TaskScheduler,
     User,
     UserPasswordHistory,
-    UserSocial,
     data_scope_rule,
     role_data_scope,
     role_menu,

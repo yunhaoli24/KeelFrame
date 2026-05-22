@@ -29,7 +29,6 @@ class Settings(BaseSettings):
     FASTAPI_DOCS_URL: str = "/docs"
     FASTAPI_REDOC_URL: str = "/redoc"
     FASTAPI_OPENAPI_URL: str | None = "/openapi"
-    FASTAPI_STATIC_FILES: bool = True
 
     # .env 数据库
     DATABASE_TYPE: Literal["postgresql"]
@@ -145,6 +144,12 @@ class Settings(BaseSettings):
     UPLOAD_IMAGE_SIZE_MAX: int = 5 * 1024 * 1024  # 5 MB
     UPLOAD_VIDEO_EXT_INCLUDE: list[str] = ["mp4", "mov", "avi", "flv"]
     UPLOAD_VIDEO_SIZE_MAX: int = 20 * 1024 * 1024  # 20 MB
+    OBJECT_STORAGE_DEFAULT_ENDPOINT: str = "http://127.0.0.1:9000"
+    OBJECT_STORAGE_DEFAULT_ACCESS_KEY: str = "rustfsadmin"
+    OBJECT_STORAGE_DEFAULT_SECRET_KEY: str = "ChangeMe123!"
+    OBJECT_STORAGE_DEFAULT_BUCKET: str = "fba-static"
+    OBJECT_STORAGE_DEFAULT_PREFIX: str = "uploads"
+    OBJECT_STORAGE_DEFAULT_REGION: str = "auto"
 
     # 演示模式配置
     DEMO_MODE: bool = False
@@ -189,9 +194,6 @@ class Settings(BaseSettings):
         "/redoc",
         "/openapi",
         f"{FASTAPI_API_V1_PATH}/auth/login/swagger",
-        f"{FASTAPI_API_V1_PATH}/oauth2/github/callback",
-        f"{FASTAPI_API_V1_PATH}/oauth2/google/callback",
-        f"{FASTAPI_API_V1_PATH}/oauth2/linux-do/callback",
     ]
     OPERA_LOG_ENCRYPT_TYPE: int = 1  # 0: AES (性能损耗); 1: md5; 2: ItsDangerous; 3: 不加密, others: 替换为 ******
     OPERA_LOG_ENCRYPT_KEY_INCLUDE: list[str] = [  # 将加密接口入参参数对应的值
@@ -228,26 +230,6 @@ class Settings(BaseSettings):
     CELERY_TASK_MAX_RETRIES: int = 5
 
     ##################################################
-    # [ App ] oauth2
-    ##################################################
-    # .env
-    OAUTH2_GITHUB_CLIENT_ID: str
-    OAUTH2_GITHUB_CLIENT_SECRET: str
-    OAUTH2_GOOGLE_CLIENT_ID: str
-    OAUTH2_GOOGLE_CLIENT_SECRET: str
-    OAUTH2_LINUX_DO_CLIENT_ID: str
-    OAUTH2_LINUX_DO_CLIENT_SECRET: str
-
-    # 基础配置
-    OAUTH2_STATE_REDIS_PREFIX: str = "fba:oauth2:state"
-    OAUTH2_STATE_EXPIRE_SECONDS: int = 60 * 3  # 3 分钟
-    OAUTH2_GITHUB_REDIRECT_URI: str = "http://127.0.0.1:8080/api/v1/oauth2/github/callback"
-    OAUTH2_GOOGLE_REDIRECT_URI: str = "http://127.0.0.1:8080/api/v1/oauth2/google/callback"
-    OAUTH2_LINUX_DO_REDIRECT_URI: str = "http://127.0.0.1:8080/api/v1/oauth2/linux-do/callback"
-    OAUTH2_FRONTEND_LOGIN_REDIRECT_URI: str = "http://localhost:5173/oauth2/callback"
-    OAUTH2_FRONTEND_BINDING_REDIRECT_URI: str = "http://localhost:5173/profile"
-
-    ##################################################
     # [ App ] email
     ##################################################
     # .env
@@ -268,7 +250,6 @@ class Settings(BaseSettings):
         if values.get("ENVIRONMENT") == "prod":
             # FastAPI
             values["FASTAPI_OPENAPI_URL"] = None
-            values["FASTAPI_STATIC_FILES"] = False
 
             # task
             values["CELERY_BROKER"] = "rabbitmq"

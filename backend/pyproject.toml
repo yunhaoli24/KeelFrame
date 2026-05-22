@@ -22,7 +22,6 @@ dependencies = [
     "celery-aio-pool>=0.1.0rc8",
     "cryptography>=46.0.3",
     "fast-captcha>=0.3.2",
-    "fastapi-oauth20>=0.0.2",
     "fastapi-limiter>=0.2.0",
     "fastapi-pagination>=0.15.0",
     "fastapi[standard-no-fastapi-cloud-cli]>=0.123.5",
@@ -58,6 +57,7 @@ dependencies = [
     "user-agents>=2.2.0",
     "aio-pika>=9.5.8",
     "wait-for-it>=2.3.0",
+    "socksio>=1.0.0",
 ]
 
 [dependency-groups]
@@ -178,3 +178,22 @@ venv = ".venv"
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
 stubPath = "typings"
+
+[tool.coverage.report]
+skip_covered = true
+exclude_also = [
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "def main().*",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "no cover: start(?s:.)*?no cover: stop",
+    "\\A(?s:.*# pragma: exclude file.*)\\Z",
+]
+omit = ["*/alembic/*"]

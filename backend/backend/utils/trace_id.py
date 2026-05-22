@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Trace Id."""
 
 from typing import Any

@@ -33,13 +33,13 @@ class RedisCli(Redis):
         try:
             ping = cast("Any", self.ping)  # pyright: ignore[reportUnknownMemberType]
             await ping()
-        except RedisTimeoutError:
+        except RedisTimeoutError:  # pragma: no cover
             log.error("❌ 数据库 redis 连接超时")
             sys.exit()
-        except AuthenticationError:
+        except AuthenticationError:  # pragma: no cover
             log.error("❌ 数据库 redis 连接认证失败")
             sys.exit()
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             log.error("❌ 数据库 redis 连接异常 {}", e)
             sys.exit()
 

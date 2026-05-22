@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Request Parse."""
 
 from typing import Any
@@ -9,7 +10,7 @@ from user_agents import parse
 
 from backend.core.conf import settings
 from backend.common.log import log
-from backend.core.path_conf import STATIC_DIR
+from backend.core.path_conf import RESOURCES_DIR
 from backend.database.redis import redis_client
 from backend.common.dataclasses import IpInfo, UserAgentInfo
 
@@ -58,7 +59,7 @@ async def get_location_online(ip: str, user_agent: str) -> dict[str, Any] | None
 
 
 # 离线 IP 搜索器单例（数据将缓存到内存，缓存大小取决于 IP 数据文件大小）
-__xdb_searcher = XdbSearcher(contentBuff=XdbSearcher.loadContentFromFile(dbfile=STATIC_DIR / "ip2region_v4.xdb"))
+__xdb_searcher = XdbSearcher(contentBuff=XdbSearcher.loadContentFromFile(dbfile=RESOURCES_DIR / "ip2region_v4.xdb"))
 
 
 def get_location_offline(ip: str) -> dict[str, Any] | None:

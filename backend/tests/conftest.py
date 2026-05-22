@@ -88,7 +88,6 @@ def migrated_test_database() -> Generator[None]:
     _migrate_test_database()
     yield
     awaitable = async_test_engine.dispose()
-
     asyncio.run(awaitable)
 
 

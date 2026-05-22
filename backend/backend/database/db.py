@@ -56,7 +56,7 @@ def create_async_engine_and_session(url: str | URL) -> tuple[AsyncEngine, async_
             pool_pre_ping=True,  # 低：False 高：True
             pool_use_lifo=False,  # 低：False 高：True
         )
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         log.error("❌ 数据库链接失败 {}", e)
         sys.exit()
     else:

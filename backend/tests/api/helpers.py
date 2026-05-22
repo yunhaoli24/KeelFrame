@@ -10,6 +10,12 @@ def assert_ok(response_json: JsonObject) -> None:
     assert response_json["code"] == 200
 
 
+def assert_error(response_json: JsonObject, code: int) -> None:
+    """Assert a standard error API response."""
+    assert response_json["code"] == code
+    assert isinstance(response_json["msg"], str)
+
+
 def assert_page(response_json: JsonObject) -> list[JsonObject]:
     """Assert a standard page response and return items."""
     assert_ok(response_json)
@@ -79,3 +85,17 @@ def find_created_id(client: TestClient, path: str, headers: dict[str, str], key:
     created_id = matches[0]["id"]
     assert isinstance(created_id, str | int | float)
     return int(created_id)
+
+
+def post_multipart(
+    client: TestClient,
+    path: str,
+    headers: dict[str, str],
+    *,
+    files: dict[str, tuple[str, bytes, str]],
+    params: dict[str, str | int] | None = None,
+) -> JsonObject:
+    """POST a multipart API endpoint."""
+    response = client.post(path, headers=headers, params=params, files=files)
+    assert response.status_code == 200
+    return response_json(response.json())

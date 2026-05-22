@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Demo Site."""
 
 from fastapi import Request

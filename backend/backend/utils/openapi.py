@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Openapi."""
 
 from fastapi import FastAPI

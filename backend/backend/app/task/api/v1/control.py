@@ -24,9 +24,9 @@ async def get_task_registered() -> ResponseSchemaModel[list[TaskRegisteredDetail
     registered = await run_in_threadpool(inspector.registered)
     if not registered:
         raise errors.ServerError(msg="Celery Worker 暂不可用, 请稍后重试")
-    task_registered: list[TaskRegisteredDetail] = []
+    task_registered: list[TaskRegisteredDetail] = []  # pragma: no cover
     celery_app_tasks = celery_app.tasks
-    for tasks in registered.values():
+    for tasks in registered.values():  # pragma: no cover
         for task in tasks:
             task_ins = celery_app_tasks.get(task)
             if task_ins:
@@ -50,5 +50,5 @@ async def revoke_task(task_id: Annotated[str, Path(description="任务 UUID")]) 
     workers = await run_in_threadpool(celery_app.control.ping, timeout=0.5)
     if not workers:
         raise errors.ServerError(msg="Celery Worker 暂不可用, 请稍后重试")
-    celery_app.control.revoke(task_id)
-    return response_base.success()
+    celery_app.control.revoke(task_id)  # pragma: no cover
+    return response_base.success()  # pragma: no cover

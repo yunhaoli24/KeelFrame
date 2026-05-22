@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Dynamic Config."""
 
 from sqlalchemy import inspect

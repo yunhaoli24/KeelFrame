@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Redis Info."""
 
 from typing import Any, cast

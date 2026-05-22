@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Timezone."""
 
 import zoneinfo

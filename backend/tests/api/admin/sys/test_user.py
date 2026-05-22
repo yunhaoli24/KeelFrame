@@ -1,0 +1,151 @@
+"""Test user router APIs."""
+
+from starlette.testclient import TestClient
+
+from tests.conftest import DataStore, login_headers
+from tests.api.helpers import get_json, put_json, assert_ok, post_json, assert_page, delete_json, assert_error
+
+
+def user_payload(username: str = "api_user") -> dict[str, object]:
+    """Build a user payload."""
+    return {
+        "username": username,
+        "password": "123456",
+        "nickname": "API User",
+        "email": f"{username}@example.com",
+        "phone": "13900000001",
+        "dept_id": 1,
+        "roles": [1],
+    }
+
+
+def test_current_user(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test current user API."""
+    me = get_json(client, "/sys/users/me", token_headers)
+    assert_ok(me)
+    assert me["data"]["username"] == "admin"
+
+
+def test_user_read_apis(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test seeded user query APIs."""
+    users = get_json(client, "/sys/users", token_headers, username="admin")
+    assert any(item["username"] == "admin" for item in assert_page(users))
+    assert_page(get_json(client, "/sys/users", token_headers, dept=1, phone="13800138000", status=1))
+
+    user_detail = get_json(client, "/sys/users/1", token_headers)
+    assert_ok(user_detail)
+    assert user_detail["data"]["username"] == "admin"
+
+    user_roles = get_json(client, "/sys/users/1/roles", token_headers)
+    assert_ok(user_roles)
+    assert user_roles["data"]
+
+    for path in ("/sys/users/999999", "/sys/users/999999/roles"):
+        response = client.get(path, headers=token_headers)
+        assert response.status_code == 404
+        assert_error(response.json(), 404)
+
+
+def test_user_lifecycle(client: TestClient, token_headers: dict[str, str], data_store: DataStore) -> None:
+    """Test user creation, update, permission toggles, password reset, and deletion."""
+    username = "api_user"
+    payload = user_payload(username)
+    create_body = post_json(client, "/sys/users", token_headers, payload)
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+    data_store.created["user_id"] = user_id
+
+    assert_ok(get_json(client, f"/sys/users/{user_id}", token_headers))
+    update_payload = payload | {"nickname": "API User Updated", "phone": "13900000002"}
+    assert_ok(put_json(client, f"/sys/users/{user_id}", token_headers, update_payload))
+    assert_ok(put_json(client, f"/sys/users/{user_id}/permissions?permission_type=staff", token_headers))
+    new_password = "abc123"  # noqa: S105
+    assert_ok(put_json(client, f"/sys/users/{user_id}/password", token_headers, {"password": new_password}))
+
+    data_store.created["api_user_headers"] = login_headers(client, username, new_password)
+    assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+
+
+def test_user_permission_toggles(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test user permission toggles exposed by the public API."""
+    username = "api_permission_user"
+    payload = user_payload(username)
+    create_body = post_json(client, "/sys/users", token_headers, payload)
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+
+    for permission_type in ("staff", "status", "multi_login", "superuser"):
+        assert_ok(
+            put_json(client, f"/sys/users/{user_id}/permissions?permission_type={permission_type}", token_headers)
+        )
+
+    assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+
+
+def test_non_superuser_cannot_use_superuser_user_apis(client: TestClient, data_store: DataStore) -> None:
+    """Test superuser-only user APIs reject a normal user."""
+    headers = data_store.test_headers or login_headers(client, "test", "123456")
+    create_response = client.post("/sys/users", headers=headers, json=user_payload("normal_forbidden"))
+    assert create_response.status_code == 403
+    assert_error(create_response.json(), 403)
+
+    update_response = client.put("/sys/users/1", headers=headers, json=user_payload("normal_forbidden"))
+    assert update_response.status_code == 403
+    assert_error(update_response.json(), 403)
+
+    reset_response = client.put("/sys/users/1/password", headers=headers, json={"password": "abc123"})
+    assert reset_response.status_code == 403
+    assert_error(reset_response.json(), 403)
+
+
+def test_profile_update_apis(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test current-user profile update APIs."""
+    assert_ok(put_json(client, "/sys/users/me/nickname", token_headers, {"nickname": "用户666"}))
+    assert_ok(put_json(client, "/sys/users/me/avatar", token_headers, {"avatar": "https://example.com/avatar.png"}))
+
+
+def test_user_error_branches(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test user router error branches."""
+    duplicate = client.post("/sys/users", headers=token_headers, json=user_payload("admin"))
+    assert duplicate.status_code == 409
+    assert_error(duplicate.json(), 409)
+
+    missing_role = client.post(
+        "/sys/users",
+        headers=token_headers,
+        json=user_payload("api_missing_role") | {"roles": [999999]},
+    )
+    assert missing_role.status_code == 404
+    assert_error(missing_role.json(), 404)
+
+    self_permission = client.put("/sys/users/1/permissions?permission_type=staff", headers=token_headers)
+    assert self_permission.status_code == 403
+    assert_error(self_permission.json(), 403)
+
+    missing_permission = client.put("/sys/users/999999/permissions?permission_type=staff", headers=token_headers)
+    assert missing_permission.status_code == 404
+    assert_error(missing_permission.json(), 404)
+
+    missing_delete = client.request("DELETE", "/sys/users/999999", headers=token_headers)
+    assert missing_delete.status_code == 404
+    assert_error(missing_delete.json(), 404)
+
+    captcha_response = client.post("/emails/captcha", headers=token_headers, json={"recipients": "api@example.com"})
+    assert captcha_response.status_code == 200
+    assert_ok(captcha_response.json())
+
+    wrong_captcha = client.put(
+        "/sys/users/me/email",
+        headers=token_headers,
+        json={"email": "api_email@example.com", "captcha": "000000"},
+    )
+    assert wrong_captcha.status_code == 400
+    assert_error(wrong_captcha.json(), 40001)
+
+    password_response = client.put(
+        "/sys/users/me/password",
+        headers=token_headers,
+        json={"old_password": "wrong", "new_password": "abc123", "confirm_password": "abc123"},
+    )
+    assert password_response.status_code == 400
+    assert_error(password_response.json(), 400)
