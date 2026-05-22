@@ -25,7 +25,6 @@ from backend.app.admin.schema.user import (
     AddUserParam,
     UpdateUserParam,
     AddUserRoleParam,
-    AddOAuth2UserParam,
 )
 from backend.app.admin.utils.password_security import get_hash_password
 
@@ -83,7 +82,7 @@ class CRUDUser(CRUDPlus[User]):
         filters: dict[str, str | int] = {}
 
         if dept:
-            filters["dept_id"] = str(dept)
+            filters["dept_id"] = dept
         if username:
             filters["username__like"] = f"%{username}%"
         if phone:
@@ -125,30 +124,6 @@ class CRUDUser(CRUDPlus[User]):
         user_role_data = [AddUserRoleParam(user_id=new_user.id, role_id=role.id).model_dump() for role in roles]
         user_role_stmt = insert(user_role)
         await db.execute(user_role_stmt, user_role_data)
-
-    async def add_by_oauth2(self, db: AsyncSession, obj: AddOAuth2UserParam) -> None:
-        """通过 OAuth2 添加用户.
-
-        :param db: 数据库会话
-        :param obj: 注册用户参数
-        :return:
-        """
-        dict_obj = obj.model_dump()
-        dict_obj.update({"is_staff": True, "salt": None})
-        new_user = self.model(**dict_obj)
-        db.add(new_user)
-        await db.flush()
-
-        role_stmt = select(Role)
-        result = await db.execute(role_stmt)
-        role = result.scalars().first()  # 默认绑定第一个角色
-
-        if role is None:
-            msg = "系统缺少可用角色, 无法创建 OAuth2 用户"
-            raise ValueError(msg)
-
-        user_role_stmt = insert(user_role).values(AddUserRoleParam(user_id=new_user.id, role_id=role.id).model_dump())
-        await db.execute(user_role_stmt)
 
     async def update(self, db: AsyncSession, user_id: int, obj: UpdateUserParam) -> int:
         """更新用户信息.
@@ -281,10 +256,6 @@ class CRUDUser(CRUDPlus[User]):
         """
         user_role_stmt = delete(user_role).where(user_role.c.user_id == user_id)
         await db.execute(user_role_stmt)
-
-        from backend.app.oauth2.crud.crud_user_social import user_social_dao  # noqa: PLC0415
-
-        await user_social_dao.delete_by_user_id(db, user_id)
 
         return await self.delete_model(db, user_id)
 

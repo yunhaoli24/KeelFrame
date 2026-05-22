@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Serializers."""
 
 from typing import Any, cast

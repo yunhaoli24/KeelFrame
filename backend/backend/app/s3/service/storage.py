@@ -13,7 +13,7 @@ from backend.app.s3.schema.storage import CreateS3StorageParam, DeleteS3StorageP
 
 
 class S3StorageService:
-    """S3 Storage Service."""
+    """S3 storage service."""
 
     @staticmethod
     async def get(*, db: AsyncSession, pk: int) -> S3Storage:

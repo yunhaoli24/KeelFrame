@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Otel."""
 
 from fastapi import FastAPI

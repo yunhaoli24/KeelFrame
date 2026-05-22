@@ -42,16 +42,6 @@ class AddUserRoleParam(SchemaBase):
     role_id: int = Field(description="角色 ID")
 
 
-class AddOAuth2UserParam(SchemaBase):
-    """添加 OAuth2 用户参数."""
-
-    username: str = Field(description="用户名")
-    password: str | None = Field(None, description="密码")
-    nickname: str | None = Field(None, description="昵称")
-    email: CustomEmailStr | None = Field(None, description="邮箱")
-    avatar: Annotated[HttpUrl, PlainSerializer(ser_string)] | None = Field(None, description="头像地址")
-
-
 class ResetPasswordParam(SchemaBase):
     """重置密码参数."""
 

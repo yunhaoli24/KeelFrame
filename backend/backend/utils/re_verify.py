@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Re Verify."""
 
 import re

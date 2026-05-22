@@ -1,0 +1,10 @@
+{
+  "filtered": {
+    "name": "API RBAC Filtered Scope",
+    "status": 1
+  },
+  "passthrough": {
+    "name": "API RBAC Passthrough Scope",
+    "status": 1
+  }
+}

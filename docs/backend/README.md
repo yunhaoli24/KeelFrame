@@ -9,4 +9,6 @@
 
 - 全栈开发启动与进程管理：`docs/backend/dev-startup.md`
 - 数据库迁移与基线数据配置：`backend/backend/alembic/`
+- 后端测试：`docs/backend/testing.md`
 - 后端 lint、pyright 与 ty 约束：`docs/backend/lint-pyright.md`
+- 对象存储与静态文件：`docs/backend/object-storage.md`

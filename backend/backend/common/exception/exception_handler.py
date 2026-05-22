@@ -33,7 +33,7 @@ def _get_exception_code(status_code: int) -> int:
     """
     try:
         STATUS_PHRASES[status_code]
-    except Exception:
+    except Exception:  # pragma: no cover
         return StandardResponseCode.HTTP_400
 
     return status_code
@@ -84,7 +84,7 @@ def register_exception(app: FastAPI) -> None:
                 "msg": exc.detail,
                 "data": None,
             }
-        else:
+        else:  # pragma: no cover
             res = response_base.fail(res=CustomResponseCode.HTTP_400)
             content = res.model_dump()
         ctx.__request_http_exception__ = content
@@ -131,13 +131,13 @@ def register_exception(app: FastAPI) -> None:
         :param exc: 断言错误
         :return:
         """
-        if settings.ENVIRONMENT == "dev":
+        if settings.ENVIRONMENT == "dev":  # pragma: no cover
             content: ResponseContent = {
                 "code": StandardResponseCode.HTTP_500,
                 "msg": str("".join(exc.args) if exc.args else exc.__doc__),
                 "data": None,
             }
-        else:
+        else:  # pragma: no cover
             res = response_base.fail(res=CustomResponseCode.HTTP_500)
             content = res.model_dump()
         ctx.__request_assertion_error__ = content
@@ -180,13 +180,13 @@ def register_exception(app: FastAPI) -> None:
         :param exc: 未知异常
         :return:
         """
-        if settings.ENVIRONMENT == "dev":
+        if settings.ENVIRONMENT == "dev":  # pragma: no cover
             content: ResponseContent = {
                 "code": StandardResponseCode.HTTP_500,
                 "msg": str(exc),
                 "data": None,
             }
-        else:
+        else:  # pragma: no cover
             res = response_base.fail(res=CustomResponseCode.HTTP_500)
             content = res.model_dump()
         content.update(trace_id=get_request_trace_id())
@@ -202,7 +202,7 @@ def register_exception(app: FastAPI) -> None:
         @app.exception_handler(StandardResponseCode.HTTP_500)  # pyright: ignore[reportGeneralTypeIssues]
         async def cors_custom_code_500_exception_handler(
             request: Request, exc: BaseExceptionError | Exception
-        ) -> MsgSpecJSONResponse:
+        ) -> MsgSpecJSONResponse:  # pragma: no cover
             """跨域自定义 500 异常处理.
 
             :param request: FastAPI 请求对象

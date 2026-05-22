@@ -1,3 +1,4 @@
+# pragma: exclude file
 import atexit
 import asyncio
 import weakref

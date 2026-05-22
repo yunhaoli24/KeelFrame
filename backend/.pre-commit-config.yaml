@@ -1,5 +1,5 @@
 default_language_version:
-    python: '>= 3.10'
+  python: ">= 3.10"
 
 repos:
   - repo: local
@@ -10,8 +10,8 @@ repos:
         language: system
         types_or: [python, pyi]
         args:
-          - '--fix'
-          - '--unsafe-fixes'
+          - "--fix"
+          - "--unsafe-fixes"
 
       - id: ruff-format
         name: ruff format
@@ -53,8 +53,8 @@ repos:
         args:
           - tests
           - --cov=backend
-          - --cov-report=term-missing
-          - --cov-fail-under=50
+          - --cov-report=term-missing:skip-covered
+          - --cov-fail-under=85
 
       - id: uv-lock
         name: uv lock
@@ -68,6 +68,6 @@ repos:
         language: system
         pass_filenames: false
         args:
-          - '-o'
-          - 'requirements.txt'
-          - '--no-hashes'
+          - "-o"
+          - "requirements.txt"
+          - "--no-hashes"

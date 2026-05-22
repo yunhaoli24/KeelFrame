@@ -2,7 +2,7 @@
 
 import sqlalchemy as sa
 
-from backend.app.s3.model import S3Storage
+from backend.app.s3.model import S3File, S3Storage
 from backend.app.dict.model import DictData, DictType
 from backend.app.task.model import TaskResult, TaskScheduler
 from backend.app.admin.model import (
@@ -22,7 +22,6 @@ from backend.app.admin.model import (
 )
 from backend.app.config.model import Config
 from backend.app.notice.model import Notice
-from backend.app.oauth2.model import UserSocial
 
 
 ALL_MODELS: tuple[object, ...] = (
@@ -37,12 +36,12 @@ ALL_MODELS: tuple[object, ...] = (
     Notice,
     OperaLog,
     Role,
+    S3File,
     S3Storage,
     TaskResult,
     TaskScheduler,
     User,
     UserPasswordHistory,
-    UserSocial,
     data_scope_rule,
     role_data_scope,
     role_menu,

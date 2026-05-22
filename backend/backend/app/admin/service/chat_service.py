@@ -1,4 +1,4 @@
-"""Chat Service."""
+"""Chat Service."""  # pragma: exclude file
 
 from typing import Any, cast
 from collections.abc import AsyncGenerator

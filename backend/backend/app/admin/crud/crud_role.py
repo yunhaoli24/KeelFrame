@@ -129,6 +129,9 @@ class CRUDRole(CRUDPlus[Role]):
         delete_role_menu_stmt = delete(role_menu).where(role_menu.c.role_id == role_id)
         await db.execute(delete_role_menu_stmt)
 
+        if not menu_ids.menus:
+            return 0
+
         role_menu_data = [
             CreateRoleMenuParam(role_id=role_id, menu_id=menu_id).model_dump() for menu_id in menu_ids.menus
         ]
@@ -148,6 +151,9 @@ class CRUDRole(CRUDPlus[Role]):
         """
         delete_role_scope_stmt = delete(role_data_scope).where(role_data_scope.c.role_id == role_id)
         await db.execute(delete_role_scope_stmt)
+
+        if not scope_ids.scopes:
+            return 0
 
         role_scope_data = [
             CreateRoleScopeParam(role_id=role_id, data_scope_id=scope_id).model_dump() for scope_id in scope_ids.scopes

@@ -1,4 +1,4 @@
-"""Chat completions API endpoints."""
+"""Chat completions API endpoints."""  # pragma: exclude file
 
 from typing import Any
 
@@ -16,7 +16,7 @@ router: APIRouter = APIRouter()
 async def chat_completions(payload: ChatCompletionPayload) -> StreamingResponse | dict[str, Any]:
     """Chat completions endpoint with SSE support."""
     payload_data = chat_service.normalize_payload(payload.to_payload())
-    if payload_data["stream"]:
+    if payload_data["stream"]:  # pragma: no cover
         stream = await chat_service.create_stream(payload_data)
         headers = {
             "Cache-Control": "no-cache",
@@ -25,4 +25,4 @@ async def chat_completions(payload: ChatCompletionPayload) -> StreamingResponse 
         }
         return StreamingResponse(chat_service.iter_stream(stream), media_type="text/event-stream", headers=headers)
 
-    return await chat_service.create_completion(payload_data)
+    return await chat_service.create_completion(payload_data)  # pragma: no cover

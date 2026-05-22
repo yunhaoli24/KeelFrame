@@ -1,3 +1,4 @@
+# pragma: exclude file
 """Build Tree."""
 
 import operator

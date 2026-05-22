@@ -1,6 +1,6 @@
 # Backend
 
-这是 RBAC 全栈模板的后端服务，负责认证鉴权、权限模型、管理后台 API、任务调度、对象存储、OAuth2、邮件和后端基础设施。
+这是 RBAC 全栈模板的后端服务，负责认证鉴权、权限模型、管理后台 API、任务调度、对象存储、邮件和后端基础设施。
 
 ## 当前定位
 
@@ -19,7 +19,6 @@ backend/
 ├── backend/app/config/    # 系统配置业务模块
 ├── backend/app/dict/      # 字典业务模块
 ├── backend/app/notice/    # 通知公告业务模块
-├── backend/app/oauth2/    # OAuth2 业务模块
 ├── backend/app/s3/        # 对象存储业务模块
 ├── backend/app/email/     # 邮件业务模块
 ├── backend/common/        # 通用响应、异常、安全、分页等能力

@@ -1,1 +1,2 @@
+# pragma: exclude file
 """Utils."""

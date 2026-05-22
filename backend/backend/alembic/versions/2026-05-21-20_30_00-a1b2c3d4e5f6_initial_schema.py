@@ -317,18 +317,6 @@ def upgrade():
     )
     op.create_index(op.f("ix_sys_user_role_id"), "sys_user_role", ["id"], unique=True)
     op.create_table(
-        "sys_user_social",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键 ID"),
-        sa.Column("sid", sa.String(length=256), nullable=False, comment="第三方用户 ID"),
-        sa.Column("source", sa.String(length=32), nullable=False, comment="第三方用户来源"),
-        sa.Column("user_id", sa.BigInteger(), nullable=False, comment="用户关联ID"),
-        sa.Column("created_time", backend.common.model.TimeZone(timezone=True), nullable=False, comment="创建时间"),
-        sa.Column("updated_time", backend.common.model.TimeZone(timezone=True), nullable=True, comment="更新时间"),
-        sa.PrimaryKeyConstraint("id"),
-        comment="用户社交表（OAuth2）.",
-    )
-    op.create_index(op.f("ix_sys_user_social_id"), "sys_user_social", ["id"], unique=True)
-    op.create_table(
         "task_result",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("task_id", sa.String(length=155), nullable=False),
@@ -408,8 +396,6 @@ def downgrade():
     op.drop_index(op.f("ix_task_scheduler_id"), table_name="task_scheduler")
     op.drop_table("task_scheduler")
     op.drop_table("task_result")
-    op.drop_index(op.f("ix_sys_user_social_id"), table_name="sys_user_social")
-    op.drop_table("sys_user_social")
     op.drop_index(op.f("ix_sys_user_role_id"), table_name="sys_user_role")
     op.drop_table("sys_user_role")
     op.drop_index(op.f("ix_sys_user_password_history_user_id"), table_name="sys_user_password_history")

@@ -69,6 +69,38 @@ jobs:
             lint-${{ runner.os }}-backend-
       - name: Prepare backend env
         run: cp backend/.env.example backend/.env
+      - name: Start object storage
+        env:
+          MINIO_ROOT_USER: rustfsadmin
+          MINIO_ROOT_PASSWORD: ChangeMe123!
+        run: |
+          docker run -d \
+            --name fba-minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER \
+            -e MINIO_ROOT_PASSWORD \
+            quay.io/minio/minio:latest server /data
+
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:9000/minio/health/ready; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              docker logs fba-minio
+              exit 1
+            fi
+            sleep 2
+          done
+
+          docker run --rm --network host \
+            --entrypoint /bin/sh \
+            -e MINIO_ROOT_USER \
+            -e MINIO_ROOT_PASSWORD \
+            minio/mc:latest -c '
+              mc alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" &&
+              mc mb --ignore-existing local/fba-static &&
+              mc anonymous set download local/fba-static
+            '
       - name: Run backend migrations
         run: uv run fba migrate
       - name: Run backend lint checks

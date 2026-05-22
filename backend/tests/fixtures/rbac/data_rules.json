@@ -1,0 +1,98 @@
+{
+  "eq_alpha": {
+    "name": "API RBAC Rule Eq Alpha",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 0,
+    "value": "API RBAC Dept Alpha"
+  },
+  "ne_alpha": {
+    "name": "API RBAC Rule Ne Alpha",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 1,
+    "value": "API RBAC Dept Alpha"
+  },
+  "in_alpha_beta": {
+    "name": "API RBAC Rule In Alpha Beta",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 6,
+    "value": "API RBAC Dept Alpha,API RBAC Dept Beta"
+  },
+  "not_in_alpha_beta": {
+    "name": "API RBAC Rule Not In Alpha Beta",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 7,
+    "value": "API RBAC Dept Alpha,API RBAC Dept Beta"
+  },
+  "gt_alpha": {
+    "name": "API RBAC Rule Gt Alpha",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 2,
+    "value": "API RBAC Dept Alpha"
+  },
+  "ge_beta": {
+    "name": "API RBAC Rule Ge Beta",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 3,
+    "value": "API RBAC Dept Beta"
+  },
+  "lt_gamma": {
+    "name": "API RBAC Rule Lt Gamma",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 4,
+    "value": "API RBAC Dept Gamma"
+  },
+  "le_beta": {
+    "name": "API RBAC Rule Le Beta",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 5,
+    "value": "API RBAC Dept Beta"
+  },
+  "and_ge_alpha": {
+    "name": "API RBAC Rule And Ge Alpha",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 3,
+    "value": "API RBAC Dept Alpha"
+  },
+  "and_le_beta": {
+    "name": "API RBAC Rule And Le Beta",
+    "model": "Dept",
+    "column": "name",
+    "operator": 0,
+    "expression": 5,
+    "value": "API RBAC Dept Beta"
+  },
+  "or_eq_alpha": {
+    "name": "API RBAC Rule Or Eq Alpha",
+    "model": "Dept",
+    "column": "name",
+    "operator": 1,
+    "expression": 0,
+    "value": "API RBAC Dept Alpha"
+  },
+  "or_eq_gamma": {
+    "name": "API RBAC Rule Or Eq Gamma",
+    "model": "Dept",
+    "column": "name",
+    "operator": 1,
+    "expression": 0,
+    "value": "API RBAC Dept Gamma"
+  }
+}

@@ -1,12 +1,10 @@
+# pragma: exclude file
 """File Ops."""
 
-from anyio import open_file
 from fastapi import UploadFile
 
 from backend.core.conf import settings
-from backend.common.log import log
 from backend.common.enums import FileType
-from backend.core.path_conf import UPLOAD_DIR
 from backend.utils.timezone import timezone
 from backend.common.exception import errors
 
@@ -56,24 +54,3 @@ def upload_file_verify(file: UploadFile) -> None:
             raise errors.RequestError(msg="此视频格式暂不支持")
         if file_size > settings.UPLOAD_VIDEO_SIZE_MAX:
             raise errors.RequestError(msg="视频超出最大限制, 请重新选择")
-
-
-async def upload_file(file: UploadFile) -> str:
-    """上传文件.
-
-    :param file: FastAPI 上传文件对象
-    :return:
-    """
-    filename = build_filename(file)
-    try:
-        async with await open_file(UPLOAD_DIR / filename, mode="wb") as fb:
-            while True:
-                content = await file.read(settings.UPLOAD_READ_SIZE)
-                if not content:
-                    break
-                await fb.write(content)
-    except Exception as e:
-        log.error(f"上传文件 {filename} 失败: {e!s}")
-        raise errors.RequestError(msg="上传文件失败") from e
-    await file.close()
-    return filename

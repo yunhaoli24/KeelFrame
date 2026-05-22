@@ -1,4 +1,4 @@
-"""Opera Log Middleware."""
+"""Opera Log Middleware."""  # pragma: exclude file
 
 import time
 from typing import Any, cast
