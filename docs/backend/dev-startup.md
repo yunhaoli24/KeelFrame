@@ -18,6 +18,8 @@
 - 迁移配置目录：`backend/backend/alembic/`
 - Docker 依赖服务：`docker compose up -d fba_postgres fba_redis fba_rabbitmq fba_rustfs fba_rustfs_bucket_init`
 - Docker 全栈入口：`docker compose up -d fba_ui`
+- 后端 Dockerfile：`backend/Dockerfile`
+- 部署配置目录：`deploy/backend/`
 
 ## 约束
 

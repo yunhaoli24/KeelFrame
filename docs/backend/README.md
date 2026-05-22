@@ -8,6 +8,8 @@
 ## 入口
 
 - 全栈开发启动与进程管理：`docs/backend/dev-startup.md`
+- 后端服务与 Celery 镜像构建入口：`backend/Dockerfile`
+- 容器运行、进程管理与可观测性配置：`deploy/backend/`
 - 数据库迁移与基线数据配置：`backend/backend/alembic/`
 - 后端测试：`docs/backend/testing.md`
 - 后端 lint、pyright 与 ty 约束：`docs/backend/lint-pyright.md`

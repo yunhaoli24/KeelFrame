@@ -10,6 +10,11 @@
 //   - 链路 (Traces)  -> Tempo
 // ============================================================================
 
+logging {
+  level  = "error"
+  format = "logfmt"
+}
+
 // OTLP 接收器配置
 // OpenTelemetry Protocol (OTLP) 是 OpenTelemetry 的标准数据传输协议
 // 支持同时接收日志、指标和链路追踪数据

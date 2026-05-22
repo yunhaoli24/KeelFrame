@@ -1,8 +1,9 @@
 """Test scheduler router APIs."""
 
+import psycopg
 from starlette.testclient import TestClient
 
-from tests.conftest import DataStore, login_headers
+from tests.conftest import TEST_SQLALCHEMY_DATABASE_URL, DataStore, login_headers
 from tests.api.helpers import (
     get_json,
     put_json,
@@ -90,8 +91,8 @@ def test_scheduler_execute_existing_task(
     """Test manual execution submits an existing scheduler to the test Celery worker."""
     payload = scheduler_payload("api-executable-scheduler") | {
         "task": "task_demo_params",
-        "args": '["hello"]',
-        "kwargs": '{"world": "-api"}',
+        "args": ["hello"],
+        "kwargs": {"world": "-api"},
     }
     assert_ok(post_json(client, "/schedulers", token_headers, payload))
     scheduler_id = find_created_id(client, "/schedulers", token_headers, "name", payload["name"])
@@ -133,9 +134,23 @@ def test_scheduler_missing(client: TestClient, token_headers: dict[str, str]) ->
     assert execute_missing.status_code == 404
     assert_error(execute_missing.json(), 404)
 
-    bad_args = scheduler_payload("api-bad-execute-args") | {"args": "not-json", "kwargs": "{}"}
+    bad_args_name = "api-bad-execute-args"
+    bad_args: dict[str, object] = scheduler_payload(bad_args_name) | {
+        "args": "not-json",
+        "kwargs": dict[str, str](),
+    }
+    bad_args_create = client.post("/schedulers", headers=token_headers, json=bad_args)
+    assert bad_args_create.status_code == 422
+    assert_error(bad_args_create.json(), 422)
+
+    bad_args = scheduler_payload(bad_args_name) | {"args": list[str](), "kwargs": dict[str, str]()}
     assert_ok(post_json(client, "/schedulers", token_headers, bad_args))
-    bad_args_id = find_created_id(client, "/schedulers", token_headers, "name", bad_args["name"])
+    bad_args_id = find_created_id(client, "/schedulers", token_headers, "name", bad_args_name)
+    test_database_url = TEST_SQLALCHEMY_DATABASE_URL.set(drivername="postgresql").render_as_string(hide_password=False)
+    with psycopg.connect(test_database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE task_scheduler SET args = '\"not-json\"'::jsonb WHERE id = %s", (bad_args_id,))
+        conn.commit()
     execute_bad_args = client.post(f"/schedulers/{bad_args_id}/execute", headers=token_headers)
     assert execute_bad_args.status_code == 400
     assert_error(execute_bad_args.json(), 400)

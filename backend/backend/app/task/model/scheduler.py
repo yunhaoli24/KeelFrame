@@ -8,6 +8,7 @@ from datetime import datetime
 
 import sqlalchemy as sa
 from sqlalchemy import event
+from pydantic.types import JsonValue
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.core.conf import settings
@@ -25,8 +26,8 @@ class TaskScheduler(Base):
     id: Mapped[id_key] = mapped_column(init=False)
     name: Mapped[str] = mapped_column(sa.String(64), unique=True, comment="任务名称")
     task: Mapped[str] = mapped_column(sa.String(256), comment="要运行的 Celery 任务")
-    args: Mapped[str | None] = mapped_column(sa.JSON(), comment="任务可接收的位置参数")
-    kwargs: Mapped[str | None] = mapped_column(sa.JSON(), comment="任务可接收的关键字参数")
+    args: Mapped[list[JsonValue] | None] = mapped_column(sa.JSON(), comment="任务可接收的位置参数")
+    kwargs: Mapped[dict[str, JsonValue] | None] = mapped_column(sa.JSON(), comment="任务可接收的关键字参数")
     queue: Mapped[str | None] = mapped_column(sa.String(256), comment="CELERY_TASK_QUEUES 中定义的队列")
     exchange: Mapped[str | None] = mapped_column(sa.String(256), comment="低级别 AMQP 路由的交换机")
     routing_key: Mapped[str | None] = mapped_column(sa.String(256), comment="低级别 AMQP 路由的路由密钥")

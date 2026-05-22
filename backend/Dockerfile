@@ -2,17 +2,12 @@
 ARG SERVER_TYPE=fba_server
 
 # === Python environment from uv ===
-FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim AS builder
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
-# Used for build Python packages
-RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends gcc python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+COPY backend /fba/backend
+COPY deploy/backend/supervisor /fba/deploy/backend/supervisor
 
-COPY . /fba
-
-WORKDIR /fba
+WORKDIR /fba/backend
 
 # Configure uv environment
 ENV UV_COMPILE_BYTECODE=1 \
@@ -22,13 +17,12 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 # Install dependencies with cache
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-default-groups --group server
+    uv sync --frozen --no-default-groups
 
 # === Runtime base server image ===
-FROM python:3.10-slim AS base_server
+FROM python:3.13-slim AS base_server
 
-RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources \
-    && apt-get update \
+RUN apt-get update \
     && apt-get install -y --no-install-recommends supervisor \
     && rm -rf /var/lib/apt/lists/*
 

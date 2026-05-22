@@ -23,12 +23,14 @@ services:
   fba_server:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
     image: fba_server:latest
     ports:
       - "8001:8001"
     container_name: fba_server
     restart: always
+    env_file:
+      - ./deploy/backend/docker-compose/.env.server
     environment:
       - TZ=Asia/Shanghai
     depends_on:
@@ -36,7 +38,7 @@ services:
       - fba_redis
       - fba_rustfs
     volumes:
-      - ./backend/backend/.env:/fba/backend/.env
+      - ./deploy/backend/docker-compose/.env.server:/fba/backend/backend/.env
     networks:
       - fba_network
     command:
@@ -44,6 +46,7 @@ services:
       - -c
       - |
         wait-for-it -s fba_postgres:5432 -s fba_redis:6379 -t 300
+        fba migrate
         supervisord -c /etc/supervisor/supervisord.conf
         supervisorctl restart
 
@@ -79,6 +82,12 @@ services:
       - fba_postgres:/var/lib/postgresql/data
     networks:
       - fba_network
+    command:
+      - postgres
+      - -c
+      - log_min_messages=error
+      - -c
+      - client_min_messages=error
 
   fba_redis:
     image: redis
@@ -92,6 +101,10 @@ services:
       - fba_redis:/data
     networks:
       - fba_network
+    command:
+      - redis-server
+      - --loglevel
+      - warning
 
   fba_rustfs_init:
     image: alpine:3.22
@@ -128,7 +141,7 @@ services:
       - RUSTFS_ACCESS_KEY=${RUSTFS_ACCESS_KEY:-rustfsadmin}
       - RUSTFS_SECRET_KEY=${RUSTFS_SECRET_KEY:-ChangeMe123!}
       - RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true
-      - RUSTFS_OBS_LOGGER_LEVEL=info
+      - RUSTFS_OBS_LOGGER_LEVEL=error
     volumes:
       - fba_rustfs_data:/data
     networks:
@@ -175,6 +188,7 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
     volumes:
+      - ./deploy/backend/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/90-fba-log-level.conf:ro
       - fba_rabbitmq:/var/lib/rabbitmq
     networks:
       - fba_network
@@ -182,19 +196,21 @@ services:
   fba_celery_worker:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
       args:
         - SERVER_TYPE=fba_celery_worker
     image: fba_celery_worker:latest
     # 如果你需要分布式部署 Worker，则必须移除此 container_name 配置
     container_name: fba_celery_worker
     restart: always
+    env_file:
+      - ./deploy/backend/docker-compose/.env.server
     environment:
       - TZ=Asia/Shanghai
     depends_on:
       - fba_rabbitmq
     volumes:
-      - ./backend/backend/.env:/fba/backend/.env
+      - ./deploy/backend/docker-compose/.env.server:/fba/backend/backend/.env
     networks:
       - fba_network
     command:
@@ -208,19 +224,21 @@ services:
   fba_celery_beat:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
       args:
         - SERVER_TYPE=fba_celery_beat
     image: fba_celery_beat:latest
     container_name: fba_celery_beat
     restart: always
+    env_file:
+      - ./deploy/backend/docker-compose/.env.server
     environment:
       - TZ=Asia/Shanghai
     depends_on:
       - fba_rabbitmq
       - fba_celery_worker
     volumes:
-      - ./backend/backend/.env:/fba/backend/.env
+      - ./deploy/backend/docker-compose/.env.server:/fba/backend/backend/.env
     networks:
       - fba_network
     command:
@@ -234,7 +252,7 @@ services:
   fba_celery_flower:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
       args:
         - SERVER_TYPE=fba_celery_flower
     image: fba_celery_flower:latest
@@ -242,13 +260,15 @@ services:
       - "8555:8555"
     container_name: fba_celery_flower
     restart: always
+    env_file:
+      - ./deploy/backend/docker-compose/.env.server
     environment:
       - TZ=Asia/Shanghai
     depends_on:
       - fba_rabbitmq
       - fba_celery_worker
     volumes:
-      - ./backend/backend/.env:/fba/backend/.env
+      - ./deploy/backend/docker-compose/.env.server:/fba/backend/backend/.env
     networks:
       - fba_network
     command:
@@ -260,7 +280,7 @@ services:
         supervisorctl restart
 
   fba_celery_exporter:
-    image: danihodovic/celery-exporter
+    image: danihodovic/celery-exporter:0.12.2
     restart: always
     ports:
       - "9808:9808"
@@ -271,19 +291,24 @@ services:
       - fba_rabbitmq
     networks:
       - fba_network
+    command:
+      - --broker-url=amqp://guest:guest@fba_rabbitmq:5672//
+      - --log-level=ERROR
 
   fba_loki:
-    image: grafana/loki
+    image: grafana/loki:3.7.1
     restart: always
     ports:
       - "3100:3100"
     container_name: fba_loki
     networks:
       - fba_network
-    command: -config.file=/etc/loki/local-config.yaml
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+      - -log.level=error
 
   fba_prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v3.11.3
     restart: always
     ports:
       - "9090:9090"
@@ -291,7 +316,7 @@ services:
     depends_on:
       - fba_loki
     volumes:
-      - ./backend/deploy/grafana/fba_prometheus.yml:/workspace/fba_prometheus.yml
+      - ./deploy/backend/grafana/fba_prometheus.yml:/workspace/fba_prometheus.yml
       - fba_prometheus_data:/prometheus
     networks:
       - fba_network
@@ -299,9 +324,10 @@ services:
       - --web.enable-remote-write-receiver
       - --enable-feature=exemplar-storage
       - --config.file=/workspace/fba_prometheus.yml
+      - --log.level=error
 
   fba_alloy:
-    image: grafana/alloy
+    image: grafana/alloy:v1.16.1
     restart: always
     ports:
       - "4317:4317"
@@ -311,7 +337,7 @@ services:
     depends_on:
       - fba_loki
     volumes:
-      - ./backend/deploy/grafana/fba_config.alloy:/etc/alloy/fba_config.alloy
+      - ./deploy/backend/grafana/fba_config.alloy:/etc/alloy/fba_config.alloy
     networks:
       - fba_network
     command:
@@ -320,7 +346,7 @@ services:
       - --server.http.listen-addr=0.0.0.0:12345
 
   fba_tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.10.5
     restart: always
     ports:
       - "3200:3200"
@@ -337,9 +363,10 @@ services:
     command:
       - -config.file=/etc/tempo/fba_tempo.yml
       - -auth.enabled=false
+      - -log.level=error
 
   fba_grafana:
-    image: grafana/grafana
+    image: grafana/grafana:13.0.1
     restart: always
     ports:
       - "3000:3000"
