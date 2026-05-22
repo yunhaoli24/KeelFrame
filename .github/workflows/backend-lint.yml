@@ -92,12 +92,15 @@ jobs:
             sleep 2
           done
 
-          docker run --rm --network host minio/mc:latest \
-            alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-          docker run --rm --network host minio/mc:latest \
-            mb --ignore-existing local/fba-static
-          docker run --rm --network host minio/mc:latest \
-            anonymous set download local/fba-static
+          docker run --rm --network host \
+            --entrypoint /bin/sh \
+            -e MINIO_ROOT_USER \
+            -e MINIO_ROOT_PASSWORD \
+            minio/mc:latest -c '
+              mc alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" &&
+              mc mb --ignore-existing local/fba-static &&
+              mc anonymous set download local/fba-static
+            '
       - name: Run backend migrations
         run: uv run fba migrate
       - name: Run backend lint checks
