@@ -1,5 +1,15 @@
 # Full Stack RBAC Template
 
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](backend/pyproject.toml)
+[![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](.github/workflows/frontend-lint.yml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.123%2B-009688?logo=fastapi&logoColor=white)](backend/pyproject.toml)
+[![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)](frontend/package.json)
+[![Vite](https://img.shields.io/badge/Vite-Plus-646CFF?logo=vite&logoColor=white)](frontend/package.json)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](frontend/package.json)
+[![pytest](https://img.shields.io/badge/pytest-HTTP_black--box-0A9EDC?logo=pytest&logoColor=white)](backend/tests)
+[![Coverage](https://img.shields.io/badge/Coverage-85%25+-31C654?logo=codecov&logoColor=white)](backend/.pre-commit-config.yaml)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](frontend/package.json)
+
 这是一个面向 AI Native 时代开发的 RBAC 全栈模板项目。它的目标不是只提供一套能跑起来的后台管理演示，而是提供一个干净、完整、可验证的项目骨架：AI 生成的每一行代码，都必须被自动测试、自动构建和自动部署验证，最终用 CI/CD 结果证明它能用。
 
 AI 可以把开发速度提升几个数量级，但这种提升只有在好起点上才可靠。一个充满最佳实践、边界清晰、上下文不被污染的仓库，可以让 Agent 更容易理解系统；完整的测试和质量门禁，则能让 Agent 自动发现问题、定位问题并继续修复问题。
