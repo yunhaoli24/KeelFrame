@@ -5,6 +5,7 @@ from starlette.testclient import TestClient
 from tests.conftest import DataStore, login_headers
 from tests.api.helpers import put_json, assert_error
 from tests.api.helpers import assert_ok as assert_standard_ok
+from tests.api.rbac_helpers import cleanup_rbac, create_rbac_role, create_rbac_user, create_rbac_menus
 
 
 def assert_ok(response_json: dict) -> None:
@@ -38,11 +39,55 @@ def test_auth_codes_for_normal_user(client: TestClient, data_store: DataStore) -
     assert isinstance(body["data"], list)
 
 
+def test_auth_codes_reflect_created_role_menu_permissions(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test auth codes for a created non-superuser come from bound menus."""
+    menu_ids: dict[str, int] = {}
+    role_id: int | None = None
+    user_id: int | None = None
+
+    try:
+        menu_ids = create_rbac_menus(client, token_headers, "directory", "role_menu", "menu_add_button")
+        role_id = create_rbac_role(
+            client,
+            token_headers,
+            "menu_add",
+            menu_ids=[menu_ids["directory"], menu_ids["role_menu"], menu_ids["menu_add_button"]],
+        )
+        user_id, headers = create_rbac_user(client, token_headers, "menu_add", role_ids=[role_id], staff=True)
+
+        response = client.get("/auth/codes", headers=headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert_ok(body)
+        assert set(body["data"]) == {"sys:role:query", "sys:menu:add"}
+    finally:
+        cleanup_rbac(
+            client,
+            token_headers,
+            user_ids=[user_id] if user_id is not None else [],
+            role_ids=[role_id] if role_id is not None else [],
+            menu_ids=menu_ids.values(),
+        )
+
+
 def test_login_with_wrong_password(client: TestClient) -> None:
     """Test login failure with a wrong password."""
     response = client.post("/auth/login/swagger", params={"username": "admin", "password": "wrong-password"})
     assert response.status_code == 403
     assert response.json()["code"] == 403
+
+
+def test_login_failures_do_not_lock_before_threshold(client: TestClient) -> None:
+    """Test login failure accounting still allows a later successful login."""
+    for _ in range(2):
+        response = client.post("/auth/login/swagger", params={"username": "test", "password": "wrong-password"})
+        assert response.status_code == 403
+        assert_error(response.json(), 403)
+
+    success = client.post("/auth/login/swagger", params={"username": "test", "password": "123456"})
+    assert success.status_code == 200
+    body = success.json()
+    assert body["access_token"]
 
 
 def test_login_with_missing_user(client: TestClient) -> None:

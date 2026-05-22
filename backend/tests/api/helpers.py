@@ -1,8 +1,14 @@
 """Shared helpers for black-box API tests."""
 
+import json
+from pathlib import Path
+
 from starlette.testclient import TestClient
 
 from tests.types import JsonValue, JsonObject, JsonPayload, QueryParamValue
+
+
+FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 def assert_ok(response_json: JsonObject) -> None:
@@ -85,6 +91,13 @@ def find_created_id(client: TestClient, path: str, headers: dict[str, str], key:
     created_id = matches[0]["id"]
     assert isinstance(created_id, str | int | float)
     return int(created_id)
+
+
+def load_fixture(path: str) -> JsonObject:
+    """Load a JSON fixture from the shared fixture directory."""
+    with (FIXTURE_DIR / path).open(encoding="utf-8") as fixture_file:
+        data = json.load(fixture_file)
+    return response_json(data)
 
 
 def post_multipart(

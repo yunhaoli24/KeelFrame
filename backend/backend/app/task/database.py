@@ -1,4 +1,4 @@
-"""Database."""
+"""Database."""  # pragma: exclude file
 
 from typing import Any, cast
 

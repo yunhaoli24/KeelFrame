@@ -1,0 +1,29 @@
+{
+  "alpha": {
+    "name": "API RBAC Dept Alpha",
+    "parent_id": null,
+    "sort": 901,
+    "leader": "Alpha",
+    "phone": "13900000101",
+    "email": "api_rbac_dept_alpha@example.com",
+    "status": 1
+  },
+  "beta": {
+    "name": "API RBAC Dept Beta",
+    "parent_id": null,
+    "sort": 902,
+    "leader": "Beta",
+    "phone": "13900000102",
+    "email": "api_rbac_dept_beta@example.com",
+    "status": 1
+  },
+  "gamma": {
+    "name": "API RBAC Dept Gamma",
+    "parent_id": null,
+    "sort": 903,
+    "leader": "Gamma",
+    "phone": "13900000103",
+    "email": "api_rbac_dept_gamma@example.com",
+    "status": 1
+  }
+}

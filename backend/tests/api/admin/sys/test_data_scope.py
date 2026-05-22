@@ -48,6 +48,33 @@ def test_data_scope_lifecycle(client: TestClient, token_headers: dict[str, str],
     assert_ok(delete_json(client, "/sys/data-rules", token_headers, {"pks": [rule_id]}))
 
 
+def test_data_scope_rule_relation_readback(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test a created data scope returns its bound rules."""
+    rule_id: int | None = None
+    scope_id: int | None = None
+    try:
+        rule_payload = data_rule_payload("API Scope Relation Rule")
+        assert_ok(post_json(client, "/sys/data-rules", token_headers, rule_payload))
+        rule_id = find_created_id(client, "/sys/data-rules", token_headers, "name", rule_payload["name"])
+
+        scope_payload = {"name": "API Scope Relation", "status": 1}
+        assert_ok(post_json(client, "/sys/data-scopes", token_headers, scope_payload))
+        scope_id = find_created_id(client, "/sys/data-scopes", token_headers, "name", scope_payload["name"])
+        assert_ok(put_json(client, f"/sys/data-scopes/{scope_id}/rules", token_headers, {"rules": [rule_id]}))
+
+        detail = get_json(client, f"/sys/data-scopes/{scope_id}/rules", token_headers)
+        assert_ok(detail)
+        data = detail["data"]
+        assert isinstance(data, dict)
+        assert data["name"] == scope_payload["name"]
+        assert isinstance(data["rules"], list)
+    finally:
+        if scope_id is not None:
+            assert_ok(delete_json(client, "/sys/data-scopes", token_headers, {"pks": [scope_id]}))
+        if rule_id is not None:
+            assert_ok(delete_json(client, "/sys/data-rules", token_headers, {"pks": [rule_id]}))
+
+
 def test_data_scope_error_branches(client: TestClient, token_headers: dict[str, str]) -> None:
     """Test data-scope write error branches."""
     scope_payload = {"name": "API Duplicate Data Scope", "status": 1}

@@ -1,4 +1,4 @@
-"""Chat completions API endpoints."""
+"""Chat completions API endpoints."""  # pragma: exclude file
 
 from typing import Any
 

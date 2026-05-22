@@ -19,3 +19,5 @@
 - 测试不使用 monkeypatch、mock、patch 或类似内部替身；需要覆盖分支时通过公开 HTTP 行为构造真实状态。
 - 除 `backend/tests/conftest.py` 外，测试文件不直接导入后端内部包；需要复用的后端配置由 `DataStore` fixture 提供。
 - 测试文件按路由结构组织：一个 router 文件对应一个测试文件，例如 `backend/app/admin/api/v1/sys/user.py` 对应 `backend/tests/api/admin/sys/test_user.py`。
+- RBAC/权限测试数据入口是 `backend/tests/fixtures/rbac/`，测试侧 HTTP 创建与清理入口是 `backend/tests/api/rbac_helpers.py`。
+- RBAC/权限测试清理顺序固定为用户、角色、数据范围、数据规则、部门、菜单。

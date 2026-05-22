@@ -1,0 +1,44 @@
+{
+  "role_read_only": {
+    "name": "API RBAC Role Read Only",
+    "status": 1,
+    "is_filter_scopes": true,
+    "remark": "api rbac fixture"
+  },
+  "menu_add": {
+    "name": "API RBAC Menu Add",
+    "status": 1,
+    "is_filter_scopes": true,
+    "remark": "api rbac fixture"
+  },
+  "disabled_menu_add": {
+    "name": "API RBAC Disabled Menu Add",
+    "status": 1,
+    "is_filter_scopes": true,
+    "remark": "api rbac fixture"
+  },
+  "no_menu": {
+    "name": "API RBAC No Menu",
+    "status": 1,
+    "is_filter_scopes": true,
+    "remark": "api rbac fixture"
+  },
+  "disabled": {
+    "name": "API RBAC Disabled Role",
+    "status": 0,
+    "is_filter_scopes": true,
+    "remark": "api rbac fixture"
+  },
+  "scope_filter": {
+    "name": "API RBAC Scope Filter",
+    "status": 1,
+    "is_filter_scopes": true,
+    "remark": "api rbac fixture"
+  },
+  "scope_passthrough": {
+    "name": "API RBAC Scope Passthrough",
+    "status": 1,
+    "is_filter_scopes": false,
+    "remark": "api rbac fixture"
+  }
+}

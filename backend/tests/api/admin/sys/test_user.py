@@ -66,6 +66,33 @@ def test_user_lifecycle(client: TestClient, token_headers: dict[str, str], data_
     assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
 
 
+def test_admin_reset_password_success_keeps_existing_access_token(
+    client: TestClient, token_headers: dict[str, str]
+) -> None:
+    """Test admin password reset success through public APIs."""
+    username = "api_admin_reset_password_user"
+    create_body = post_json(client, "/sys/users", token_headers, user_payload(username))
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+
+    try:
+        old_headers = login_headers(client, username, "123456")
+        assert_ok(get_json(client, "/sys/users/me", old_headers))
+
+        assert_ok(put_json(client, f"/sys/users/{user_id}/password", token_headers, {"password": "abc123"}))
+
+        still_valid = get_json(client, "/sys/users/me", old_headers)
+        assert_ok(still_valid)
+        assert still_valid["data"]["username"] == username
+
+        new_headers = login_headers(client, username, "abc123")
+        me = get_json(client, "/sys/users/me", new_headers)
+        assert_ok(me)
+        assert me["data"]["username"] == username
+    finally:
+        assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+
+
 def test_created_normal_user_has_seed_role_read_access(
     client: TestClient, token_headers: dict[str, str], data_store: DataStore
 ) -> None:
@@ -147,6 +174,49 @@ def test_user_permission_toggles(client: TestClient, token_headers: dict[str, st
     assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
 
 
+def test_user_status_toggle_rejects_existing_token(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test disabling a user rejects access with an existing token."""
+    username = "api_status_toggle_user"
+    create_body = post_json(client, "/sys/users", token_headers, user_payload(username))
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+
+    try:
+        headers = login_headers(client, username, "123456")
+        assert_ok(get_json(client, "/sys/users/me", headers))
+
+        assert_ok(put_json(client, f"/sys/users/{user_id}/permissions?permission_type=status", token_headers))
+        disabled = client.get("/sys/users/me", headers=headers)
+        assert disabled.status_code == 403
+        assert_error(disabled.json(), 403)
+    finally:
+        detail = client.get(f"/sys/users/{user_id}", headers=token_headers)
+        if detail.status_code == 200 and detail.json()["data"]["status"] == 0:
+            assert_ok(put_json(client, f"/sys/users/{user_id}/permissions?permission_type=status", token_headers))
+        assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+
+
+def test_user_multi_login_false_invalidates_old_token(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test a non-multi-login user's second login invalidates the old token."""
+    username = "api_multi_login_token_user"
+    create_body = post_json(client, "/sys/users", token_headers, user_payload(username))
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+
+    try:
+        first_headers = login_headers(client, username, "123456")
+        assert_ok(get_json(client, "/sys/users/me", first_headers))
+
+        second_headers = login_headers(client, username, "123456")
+        assert_ok(get_json(client, "/sys/users/me", second_headers))
+
+        stale = client.get("/sys/users/me", headers=first_headers)
+        assert stale.status_code == 401
+        assert_error(stale.json(), 401)
+    finally:
+        assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+
+
 def test_non_superuser_cannot_use_superuser_user_apis(client: TestClient, data_store: DataStore) -> None:
     """Test superuser-only user APIs reject a normal user."""
     headers = data_store.test_headers or login_headers(client, "test", "123456")
@@ -167,6 +237,26 @@ def test_profile_update_apis(client: TestClient, token_headers: dict[str, str]) 
     """Test current-user profile update APIs."""
     assert_ok(put_json(client, "/sys/users/me/nickname", token_headers, {"nickname": "用户666"}))
     assert_ok(put_json(client, "/sys/users/me/avatar", token_headers, {"avatar": "https://example.com/avatar.png"}))
+
+
+def test_created_user_profile_update_apis(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test created user can update own profile through public APIs."""
+    username = "api_profile_update_user"
+    create_body = post_json(client, "/sys/users", token_headers, user_payload(username))
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+
+    try:
+        headers = login_headers(client, username, "123456")
+        assert_ok(put_json(client, "/sys/users/me/nickname", headers, {"nickname": "API Profile Updated"}))
+        assert_ok(put_json(client, "/sys/users/me/avatar", headers, {"avatar": "https://example.com/profile.png"}))
+
+        me = get_json(client, "/sys/users/me", headers)
+        assert_ok(me)
+        assert me["data"]["nickname"] == "API Profile Updated"
+        assert me["data"]["avatar"] == "https://example.com/profile.png"
+    finally:
+        assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
 
 
 def test_user_error_branches(client: TestClient, token_headers: dict[str, str]) -> None:
@@ -299,5 +389,36 @@ def test_current_user_password_confirm_mismatch(client: TestClient, token_header
         )
         assert response.status_code == 400
         assert_error(response.json(), 400)
+    finally:
+        assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+
+
+def test_current_user_password_update_success_invalidates_old_token(
+    client: TestClient, token_headers: dict[str, str]
+) -> None:
+    """Test current-user password update success through public APIs."""
+    username = "api_password_update_success_user"
+    create_body = post_json(client, "/sys/users", token_headers, user_payload(username))
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+
+    try:
+        headers = login_headers(client, username, "123456")
+        response = client.put(
+            "/sys/users/me/password",
+            headers=headers,
+            json={"old_password": "123456", "new_password": "abc123", "confirm_password": "abc123"},
+        )
+        assert response.status_code == 200
+        assert_ok(response.json())
+
+        stale = client.get("/sys/users/me", headers=headers)
+        assert stale.status_code == 401
+        assert_error(stale.json(), 401)
+
+        new_headers = login_headers(client, username, "abc123")
+        me = get_json(client, "/sys/users/me", new_headers)
+        assert_ok(me)
+        assert me["data"]["username"] == username
     finally:
         assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))

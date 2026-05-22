@@ -4,6 +4,14 @@ from starlette.testclient import TestClient
 
 from tests.conftest import DataStore, login_headers
 from tests.api.helpers import get_json, put_json, assert_ok, post_json, delete_json, assert_error
+from tests.api.rbac_helpers import (
+    cleanup_rbac,
+    rbac_fixture,
+    create_rbac_role,
+    create_rbac_user,
+    create_rbac_menus,
+    payload_from_fixture,
+)
 
 
 def menu_payload(title: str = "API Menu") -> dict[str, object]:
@@ -109,3 +117,79 @@ def test_menu_error_branches(client: TestClient, token_headers: dict[str, str]) 
     missing_delete = client.request("DELETE", "/sys/menus/999999", headers=token_headers)
     assert missing_delete.status_code == 200
     assert_error(missing_delete.json(), 400)
+
+
+def test_menu_button_permission_controls_write_api(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test a created button permission grants only its matching write API."""
+    menu_ids: dict[str, int] = {}
+    role_id: int | None = None
+    user_id: int | None = None
+    created_menu_id: int | None = None
+
+    try:
+        menu_ids = create_rbac_menus(client, token_headers, "directory", "role_menu", "menu_add_button")
+        role_id = create_rbac_role(
+            client,
+            token_headers,
+            "menu_add",
+            menu_ids=[menu_ids["directory"], menu_ids["role_menu"], menu_ids["menu_add_button"]],
+        )
+        user_id, headers = create_rbac_user(client, token_headers, "menu_add", role_ids=[role_id], staff=True)
+
+        payload = payload_from_fixture(rbac_fixture("menus"), "no_perms_menu")
+        payload["title"] = "API RBAC User Created Menu"
+        payload["name"] = "ApiRbacUserCreatedMenu"
+        payload["path"] = "/api-rbac/user-created"
+        response = client.post("/sys/menus", headers=headers, json=payload)
+        assert response.status_code == 200
+        assert_ok(response.json())
+        created_menu_id = int(get_json(client, "/sys/menus", token_headers, title=payload["title"])["data"][0]["id"])
+
+        edit_response = client.put(
+            f"/sys/menus/{created_menu_id}",
+            headers=headers,
+            json=payload | {"title": "API RBAC User Edited Menu"},
+        )
+        assert edit_response.status_code == 403
+        assert_error(edit_response.json(), 403)
+    finally:
+        cleanup_rbac(
+            client,
+            token_headers,
+            user_ids=[user_id] if user_id is not None else [],
+            role_ids=[role_id] if role_id is not None else [],
+            menu_ids=[*menu_ids.values(), *([created_menu_id] if created_menu_id is not None else [])],
+        )
+
+
+def test_disabled_menu_permission_does_not_grant_write_api(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test disabled menu permissions are ignored by RBAC."""
+    menu_ids: dict[str, int] = {}
+    role_id: int | None = None
+    user_id: int | None = None
+
+    try:
+        menu_ids = create_rbac_menus(client, token_headers, "directory", "role_menu", "disabled_menu_add_button")
+        role_id = create_rbac_role(
+            client,
+            token_headers,
+            "disabled_menu_add",
+            menu_ids=[menu_ids["directory"], menu_ids["role_menu"], menu_ids["disabled_menu_add_button"]],
+        )
+        user_id, headers = create_rbac_user(client, token_headers, "disabled_menu_add", role_ids=[role_id], staff=True)
+
+        payload = payload_from_fixture(rbac_fixture("menus"), "no_perms_menu")
+        payload["title"] = "API RBAC Disabled Permission Menu"
+        payload["name"] = "ApiRbacDisabledPermissionMenu"
+        payload["path"] = "/api-rbac/disabled-permission"
+        response = client.post("/sys/menus", headers=headers, json=payload)
+        assert response.status_code == 403
+        assert_error(response.json(), 403)
+    finally:
+        cleanup_rbac(
+            client,
+            token_headers,
+            user_ids=[user_id] if user_id is not None else [],
+            role_ids=[role_id] if role_id is not None else [],
+            menu_ids=menu_ids.values(),
+        )

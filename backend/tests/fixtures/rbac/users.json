@@ -1,0 +1,65 @@
+{
+  "read_only": {
+    "username": "api_rbac_read_only",
+    "password": "123456",
+    "nickname": "API RBAC Read Only",
+    "email": "api_rbac_read_only@example.com",
+    "phone": "13900000201",
+    "dept_id": 1,
+    "roles": []
+  },
+  "menu_add": {
+    "username": "api_rbac_menu_add",
+    "password": "123456",
+    "nickname": "API RBAC Menu Add",
+    "email": "api_rbac_menu_add@example.com",
+    "phone": "13900000202",
+    "dept_id": 1,
+    "roles": []
+  },
+  "disabled_menu_add": {
+    "username": "api_rbac_disabled_menu_add",
+    "password": "123456",
+    "nickname": "API RBAC Disabled Menu Add",
+    "email": "api_rbac_disabled_menu_add@example.com",
+    "phone": "13900000203",
+    "dept_id": 1,
+    "roles": []
+  },
+  "no_menu": {
+    "username": "api_rbac_no_menu",
+    "password": "123456",
+    "nickname": "API RBAC No Menu",
+    "email": "api_rbac_no_menu@example.com",
+    "phone": "13900000204",
+    "dept_id": 1,
+    "roles": []
+  },
+  "disabled_role": {
+    "username": "api_rbac_disabled_role",
+    "password": "123456",
+    "nickname": "API RBAC Disabled Role",
+    "email": "api_rbac_disabled_role@example.com",
+    "phone": "13900000205",
+    "dept_id": 1,
+    "roles": []
+  },
+  "scope_filter": {
+    "username": "api_rbac_scope_filter",
+    "password": "123456",
+    "nickname": "API RBAC Scope Filter",
+    "email": "api_rbac_scope_filter@example.com",
+    "phone": "13900000206",
+    "dept_id": 1,
+    "roles": []
+  },
+  "scope_passthrough": {
+    "username": "api_rbac_scope_passthrough",
+    "password": "123456",
+    "nickname": "API RBAC Scope Passthrough",
+    "email": "api_rbac_scope_passthrough@example.com",
+    "phone": "13900000207",
+    "dept_id": 1,
+    "roles": []
+  }
+}

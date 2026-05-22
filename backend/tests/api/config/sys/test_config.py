@@ -44,6 +44,43 @@ def test_config_lifecycle(client: TestClient, token_headers: dict[str, str], dat
     assert_ok(delete_json(client, "/sys/configs", token_headers, [config_id]))
 
 
+def test_config_bulk_update_multiple_configs(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test successful bulk update validates and updates multiple configs."""
+    first_id: int | None = None
+    second_id: int | None = None
+    first = config_payload("API_CONFIG_BULK_FIRST") | {"name": "API Config Bulk First"}
+    second = config_payload("API_CONFIG_BULK_SECOND") | {"name": "API Config Bulk Second"}
+
+    try:
+        assert_ok(post_json(client, "/sys/configs", token_headers, first))
+        first_id = find_created_id(client, "/sys/configs", token_headers, "key", first["key"])
+        assert_ok(post_json(client, "/sys/configs", token_headers, second))
+        second_id = find_created_id(client, "/sys/configs", token_headers, "key", second["key"])
+
+        assert_ok(
+            put_json(
+                client,
+                "/sys/configs",
+                token_headers,
+                [
+                    first | {"id": first_id, "value": "bulk-enabled"},
+                    second | {"id": second_id, "value": "bulk-disabled"},
+                ],
+            )
+        )
+
+        first_detail = get_json(client, f"/sys/configs/{first_id}", token_headers)
+        assert_ok(first_detail)
+        assert first_detail["data"]["value"] == "bulk-enabled"
+        second_detail = get_json(client, f"/sys/configs/{second_id}", token_headers)
+        assert_ok(second_detail)
+        assert second_detail["data"]["value"] == "bulk-disabled"
+    finally:
+        delete_ids = [config_id for config_id in (first_id, second_id) if config_id is not None]
+        if delete_ids:
+            assert_ok(delete_json(client, "/sys/configs", token_headers, delete_ids))
+
+
 def test_config_error_branches(client: TestClient, token_headers: dict[str, str]) -> None:
     """Test config router error branches."""
     missing = client.get("/sys/configs/999999", headers=token_headers)

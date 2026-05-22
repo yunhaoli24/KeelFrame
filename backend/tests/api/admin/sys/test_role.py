@@ -13,6 +13,7 @@ from tests.api.helpers import (
     assert_error,
     find_created_id,
 )
+from tests.api.rbac_helpers import cleanup_rbac, create_rbac_role, create_rbac_user, create_rbac_menus
 from tests.api.admin.sys.test_user import user_payload
 
 
@@ -56,12 +57,119 @@ def test_role_lifecycle(client: TestClient, token_headers: dict[str, str], data_
     assert_ok(delete_json(client, "/sys/roles", token_headers, {"pks": [role_id]}))
 
 
+def test_created_role_relation_readbacks(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test created role menu and scope relation readback APIs."""
+    role_id: int | None = None
+    try:
+        role_payload = {"name": "API Relation Readback Role", "status": 1, "is_filter_scopes": True, "remark": "api"}
+        assert_ok(post_json(client, "/sys/roles", token_headers, role_payload))
+        role_id = find_created_id(client, "/sys/roles", token_headers, "name", role_payload["name"])
+        assert_ok(put_json(client, f"/sys/roles/{role_id}/menus", token_headers, {"menus": [1, 2, 3, 53]}))
+        assert_ok(put_json(client, f"/sys/roles/{role_id}/scopes", token_headers, {"scopes": [1]}))
+
+        menus = get_json(client, f"/sys/roles/{role_id}/menus", token_headers)
+        assert_ok(menus)
+        assert isinstance(menus["data"], list)
+        assert menus["data"]
+
+        scopes = get_json(client, f"/sys/roles/{role_id}/scopes", token_headers)
+        assert_ok(scopes)
+        assert scopes["data"] == [1]
+
+        detail = get_json(client, f"/sys/roles/{role_id}", token_headers)
+        assert_ok(detail)
+        assert detail["data"]["name"] == role_payload["name"]
+    finally:
+        if role_id is not None:
+            assert_ok(delete_json(client, "/sys/roles", token_headers, {"pks": [role_id]}))
+
+
 def test_role_rbac_rejects_non_staff(client: TestClient, data_store: DataStore) -> None:
     """Test RBAC non-staff rejection branch through public role APIs."""
     normal_headers = data_store.test_headers or login_headers(client, "test", "123456")
     non_staff = client.post("/sys/roles", headers=normal_headers, json={"name": "RBAC Non Staff", "status": 1})
     assert non_staff.status_code == 403
     assert_error(non_staff.json(), 403)
+
+
+def test_role_read_only_menu_cannot_write_roles(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test a role-query menu assignment does not grant role write permissions."""
+    menu_ids: dict[str, int] = {}
+    role_id: int | None = None
+    user_id: int | None = None
+
+    try:
+        menu_ids = create_rbac_menus(client, token_headers, "directory", "role_menu")
+        role_id = create_rbac_role(
+            client,
+            token_headers,
+            "role_read_only",
+            menu_ids=[menu_ids["directory"], menu_ids["role_menu"]],
+        )
+        user_id, headers = create_rbac_user(client, token_headers, "read_only", role_ids=[role_id], staff=True)
+
+        roles = get_json(client, "/sys/roles", headers)
+        assert_page(roles)
+
+        forbidden = client.post("/sys/roles", headers=headers, json={"name": "API RBAC Forbidden Role", "status": 1})
+        assert forbidden.status_code == 403
+        assert_error(forbidden.json(), 403)
+    finally:
+        cleanup_rbac(
+            client,
+            token_headers,
+            user_ids=[user_id] if user_id is not None else [],
+            role_ids=[role_id] if role_id is not None else [],
+            menu_ids=menu_ids.values(),
+        )
+
+
+def test_role_without_menus_has_empty_sidebar_and_rbac_rejects(
+    client: TestClient, token_headers: dict[str, str]
+) -> None:
+    """Test an enabled role with no menus reaches the no-menu RBAC branch."""
+    role_id: int | None = None
+    user_id: int | None = None
+
+    try:
+        role_id = create_rbac_role(client, token_headers, "no_menu")
+        user_id, headers = create_rbac_user(client, token_headers, "no_menu", role_ids=[role_id], staff=True)
+
+        sidebar = get_json(client, "/sys/menus/sidebar", headers)
+        assert_ok(sidebar)
+        assert sidebar["data"] == []
+
+        forbidden = client.post("/sys/roles", headers=headers, json={"name": "API RBAC No Menu Write", "status": 1})
+        assert forbidden.status_code == 403
+        assert_error(forbidden.json(), 403)
+    finally:
+        cleanup_rbac(
+            client,
+            token_headers,
+            user_ids=[user_id] if user_id is not None else [],
+            role_ids=[role_id] if role_id is not None else [],
+        )
+
+
+def test_disabled_role_user_is_rejected_by_jwt_auth(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test a user whose only role is disabled is rejected on protected APIs."""
+    role_id: int | None = None
+    user_id: int | None = None
+
+    try:
+        role_id = create_rbac_role(client, token_headers, "disabled")
+        user_id, headers = create_rbac_user(client, token_headers, "disabled_role", role_ids=[role_id], staff=True)
+
+        response = client.get("/sys/users/me", headers=headers)
+        assert response.status_code == 403
+        assert_error(response.json(), 403)
+    finally:
+        cleanup_rbac(
+            client,
+            token_headers,
+            user_ids=[user_id] if user_id is not None else [],
+            role_ids=[role_id] if role_id is not None else [],
+        )
 
 
 def test_created_role_menu_grants_read_access_only(

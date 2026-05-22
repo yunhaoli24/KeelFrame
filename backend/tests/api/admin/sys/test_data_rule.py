@@ -55,6 +55,28 @@ def test_data_rule_lifecycle(client: TestClient, token_headers: dict[str, str], 
     assert_ok(delete_json(client, "/sys/data-rules", token_headers, {"pks": [rule_id]}))
 
 
+def test_data_rule_update_and_readback(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test data-rule update returns the changed rule through public reads."""
+    rule_id: int | None = None
+    try:
+        payload = data_rule_payload("API Data Rule Readback")
+        assert_ok(post_json(client, "/sys/data-rules", token_headers, payload))
+        rule_id = find_created_id(client, "/sys/data-rules", token_headers, "name", payload["name"])
+        updated = payload | {"operator": 1, "expression": 6, "value": "测试,API"}
+        assert_ok(put_json(client, f"/sys/data-rules/{rule_id}", token_headers, updated))
+
+        detail = get_json(client, f"/sys/data-rules/{rule_id}", token_headers)
+        assert_ok(detail)
+        data = detail["data"]
+        assert isinstance(data, dict)
+        assert data["operator"] == 1
+        assert data["expression"] == 6
+        assert data["value"] == "测试,API"
+    finally:
+        if rule_id is not None:
+            assert_ok(delete_json(client, "/sys/data-rules", token_headers, {"pks": [rule_id]}))
+
+
 def test_data_rule_error_branches(client: TestClient, token_headers: dict[str, str]) -> None:
     """Test data-rule write error branches."""
     duplicate_payload = data_rule_payload("API Duplicate Data Rule")
