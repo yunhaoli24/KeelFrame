@@ -9,7 +9,7 @@ from celery.app.base import Celery
 
 from backend.core.conf import settings
 from backend.core.path_conf import BASE_PATH
-from backend.app.task.tasks.beat import LOCAL_BEAT_SCHEDULE
+from backend.app.task.tasks.beat import TEST_BEAT_SCHEDULE, LOCAL_BEAT_SCHEDULE
 
 
 def find_task_packages() -> list[str]:
@@ -37,6 +37,8 @@ def init_celery() -> Celery:
 
     result_backend = f"db+postgresql+psycopg://{settings.DATABASE_USER}:{urllib.parse.quote(settings.DATABASE_PASSWORD)}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}"
 
+    beat_schedule = TEST_BEAT_SCHEDULE if settings.CELERY_TEST_BEAT_SCHEDULE else LOCAL_BEAT_SCHEDULE
+
     # https://docs.celeryq.dev/en/stable/userguide/configuration.html
     app = Celery(
         "fba_celery",
@@ -47,7 +49,7 @@ def init_celery() -> Celery:
         database_engine_options={"echo": settings.DATABASE_ECHO},
         # result_expires=0,
         # beat_sync_every=1,
-        beat_schedule=LOCAL_BEAT_SCHEDULE,
+        beat_schedule=beat_schedule,
         beat_scheduler="backend.app.task.utils.schedulers:DatabaseScheduler",
         task_cls="backend.app.task.tasks.base:TaskBase",
         task_track_started=True,

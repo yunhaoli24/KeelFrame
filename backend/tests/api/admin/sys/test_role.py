@@ -13,6 +13,7 @@ from tests.api.helpers import (
     assert_error,
     find_created_id,
 )
+from tests.api.admin.sys.test_user import user_payload
 
 
 def test_role_read_apis(client: TestClient, token_headers: dict[str, str]) -> None:
@@ -61,6 +62,47 @@ def test_role_rbac_rejects_non_staff(client: TestClient, data_store: DataStore) 
     non_staff = client.post("/sys/roles", headers=normal_headers, json={"name": "RBAC Non Staff", "status": 1})
     assert non_staff.status_code == 403
     assert_error(non_staff.json(), 403)
+
+
+def test_created_role_menu_grants_read_access_only(
+    client: TestClient, token_headers: dict[str, str], data_store: DataStore
+) -> None:
+    """Test a public-created role with menus grants read access without write access."""
+    role_name = "API Menu Bound Role"
+    assert_ok(post_json(client, "/sys/roles", token_headers, {"name": role_name, "status": 1, "remark": "api"}))
+    role_id = find_created_id(client, "/sys/roles", token_headers, "name", role_name)
+    username = "api_role_menu_user"
+    user_id: int | None = None
+    data_store.created["api_menu_bound_role_id"] = role_id
+
+    try:
+        assert_ok(put_json(client, f"/sys/roles/{role_id}/menus", token_headers, {"menus": [1, 2, 3, 53]}))
+        assert_ok(put_json(client, f"/sys/roles/{role_id}/scopes", token_headers, {"scopes": [1]}))
+        create_body = post_json(client, "/sys/users", token_headers, user_payload(username) | {"roles": [role_id]})
+        assert_ok(create_body)
+        user_id = int(create_body["data"]["id"])
+
+        headers = login_headers(client, username, "123456")
+        sidebar = get_json(client, "/sys/menus/sidebar", headers)
+        assert_ok(sidebar)
+        assert isinstance(sidebar["data"], list)
+        assert sidebar["data"]
+
+        codes = get_json(client, "/auth/codes", headers)
+        assert_ok(codes)
+        assert isinstance(codes["data"], list)
+
+        depts = get_json(client, "/sys/depts", headers)
+        assert_ok(depts)
+        assert isinstance(depts["data"], list)
+
+        forbidden = client.post("/sys/roles", headers=headers, json={"name": "Menu Role Forbidden", "status": 1})
+        assert forbidden.status_code == 403
+        assert_error(forbidden.json(), 403)
+    finally:
+        if user_id is not None:
+            assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+        assert_ok(delete_json(client, "/sys/roles", token_headers, {"pks": [role_id]}))
 
 
 def test_role_error_branches(client: TestClient, token_headers: dict[str, str]) -> None:

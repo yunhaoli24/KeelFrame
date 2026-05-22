@@ -304,14 +304,17 @@ pyright==1.1.409
 pytest==9.0.3
     # via
     #   pytest-cov
+    #   pytest-env
     #   pytest-sugar
 pytest-cov==7.1.0
+pytest-env==1.6.0
 pytest-sugar==1.1.1
 python-dateutil==2.9.0.post0
     # via celery
 python-dotenv==1.2.2
     # via
     #   pydantic-settings
+    #   pytest-env
     #   uvicorn
 python-engineio==4.13.1
     # via python-socketio

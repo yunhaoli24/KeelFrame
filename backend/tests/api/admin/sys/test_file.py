@@ -6,7 +6,7 @@ from urllib.parse import unquote, urlparse
 from starlette.testclient import TestClient
 
 from tests.types import JsonObject
-from backend.core.conf import settings
+from tests.conftest import DataStore
 from tests.api.helpers import assert_ok, post_multipart
 
 
@@ -18,10 +18,10 @@ def object_filename_from_backend_url(url: str) -> str:
     return filename
 
 
-def api_path_from_backend_url(url: str) -> str:
+def api_path_from_backend_url(url: str, api_v1_path: str) -> str:
     """Return the TestClient path for a backend API URL."""
-    assert url.startswith(settings.FASTAPI_API_V1_PATH)
-    return url.removeprefix(settings.FASTAPI_API_V1_PATH)
+    assert url.startswith(api_v1_path)
+    return url.removeprefix(api_v1_path)
 
 
 def upload_url(response_json: JsonObject) -> str:
@@ -33,7 +33,11 @@ def upload_url(response_json: JsonObject) -> str:
     return url
 
 
-def test_system_file_upload_uses_default_object_storage(client: TestClient, token_headers: dict[str, str]) -> None:
+def test_system_file_upload_uses_default_object_storage(
+    client: TestClient,
+    token_headers: dict[str, str],
+    data_store: DataStore,
+) -> None:
     """Test system file upload through the default RustFS-backed object storage."""
     body = post_multipart(
         client,
@@ -43,10 +47,11 @@ def test_system_file_upload_uses_default_object_storage(client: TestClient, toke
     )
     assert_ok(body)
     url = upload_url(body)
-    assert url.startswith(f"{settings.FASTAPI_API_V1_PATH}/sys/files/path/avatar_")
-    assert settings.OBJECT_STORAGE_DEFAULT_ENDPOINT not in url
+    api_v1_path = data_store.backend_settings["api_v1_path"]
+    assert url.startswith(f"{api_v1_path}/sys/files/path/avatar_")
+    assert not url.startswith(("http://", "https://"))
     assert url.endswith(".png")
     assert object_filename_from_backend_url(url).startswith("avatar_")
-    response = client.get(api_path_from_backend_url(url), headers=token_headers)
+    response = client.get(api_path_from_backend_url(url, api_v1_path), headers=token_headers)
     assert response.status_code == 200
     assert response.content == b"fake-png-bytes"

@@ -3,7 +3,8 @@
 from starlette.testclient import TestClient
 
 from tests.conftest import DataStore, login_headers
-from tests.api.helpers import put_json, assert_ok as assert_standard_ok, assert_error
+from tests.api.helpers import put_json, assert_error
+from tests.api.helpers import assert_ok as assert_standard_ok
 
 
 def assert_ok(response_json: dict) -> None:

@@ -19,4 +19,3 @@ def test_opera_log_read_and_delete_failure(client: TestClient, token_headers: di
     clear = client.request("DELETE", "/logs/opera/all", headers=token_headers)
     assert clear.status_code == 200
     assert_ok(clear.json())
-

@@ -34,3 +34,13 @@ LOCAL_BEAT_SCHEDULE: dict[str, BeatScheduleEntry] = {
         "schedule": TzAwareCrontab("0", "0", day_of_month="15"),
     },
 }
+
+
+TEST_BEAT_SCHEDULE: dict[str, BeatScheduleEntry] = {
+    "测试短周期任务": {
+        "task": "task_demo_params",
+        "schedule": schedule(1),
+        "args": ["beat"],
+        "kwargs": {"world": "-test"},
+    },
+}

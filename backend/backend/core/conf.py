@@ -228,6 +228,7 @@ class Settings(BaseSettings):
     CELERY_RABBITMQ_VHOST: str = ""
     CELERY_REDIS_PREFIX: str = "fba:celery"
     CELERY_TASK_MAX_RETRIES: int = 5
+    CELERY_TEST_BEAT_SCHEDULE: bool = False
 
     ##################################################
     # [ App ] email

@@ -3,9 +3,8 @@
 from starlette.testclient import TestClient
 
 from tests.conftest import DataStore, login_headers
-from tests.api.helpers import get_json, put_json, assert_ok, post_json, delete_json, assert_error
+from tests.api.helpers import get_json, put_json, assert_ok, post_json, delete_json, assert_error, find_created_id
 from tests.api.admin.sys.test_data_rule import data_rule_payload
-from tests.api.admin.sys.test_user import user_payload
 
 
 def dept_payload(name: str = "API Dept") -> dict[str, object]:
@@ -52,41 +51,56 @@ def test_dept_tree_applies_custom_data_permission_scope(
     client: TestClient, token_headers: dict[str, str], data_store: DataStore
 ) -> None:
     """Test data-permission filtering with resources wired through public APIs."""
+    username = "api_dept_permission_user"
     rule_payload = data_rule_payload("API Dept Permission Rule") | {
         "operator": 0,
         "expression": 0,
         "value": "测试",
     }
     assert_ok(post_json(client, "/sys/data-rules", token_headers, rule_payload))
-    rule_id = int(get_json(client, "/sys/data-rules", token_headers, name=rule_payload["name"])["data"]["items"][0]["id"])
+    rule_id = find_created_id(client, "/sys/data-rules", token_headers, "name", rule_payload["name"])
 
     scope_payload = {"name": "API Dept Permission Scope", "status": 1}
     assert_ok(post_json(client, "/sys/data-scopes", token_headers, scope_payload))
-    scope_id = int(get_json(client, "/sys/data-scopes", token_headers, name=scope_payload["name"])["data"]["items"][0]["id"])
-    assert_ok(put_json(client, f"/sys/data-scopes/{scope_id}/rules", token_headers, {"rules": [rule_id]}))
+    scope_id = find_created_id(client, "/sys/data-scopes", token_headers, "name", scope_payload["name"])
+    role_id: int | None = None
+    user_id: int | None = None
 
-    role_payload = {"name": "API Dept Permission Role", "status": 1, "is_filter_scopes": True, "remark": "api"}
-    assert_ok(post_json(client, "/sys/roles", token_headers, role_payload))
-    role_id = int(get_json(client, "/sys/roles", token_headers, name=role_payload["name"])["data"]["items"][0]["id"])
-    assert_ok(put_json(client, f"/sys/roles/{role_id}/menus", token_headers, {"menus": [1, 2, 3, 53]}))
-    assert_ok(put_json(client, f"/sys/roles/{role_id}/scopes", token_headers, {"scopes": [scope_id]}))
+    try:
+        assert_ok(put_json(client, f"/sys/data-scopes/{scope_id}/rules", token_headers, {"rules": [rule_id]}))
 
-    user = user_payload("api_dept_permission_user") | {"roles": [role_id]}
-    create_body = post_json(client, "/sys/users", token_headers, user)
-    assert_ok(create_body)
-    user_id = int(create_body["data"]["id"])
-    headers = login_headers(client, "api_dept_permission_user", "123456")
-    data_store.created["api_dept_permission_user_id"] = user_id
+        role_payload = {"name": "API Dept Permission Role", "status": 1, "is_filter_scopes": True, "remark": "api"}
+        assert_ok(post_json(client, "/sys/roles", token_headers, role_payload))
+        role_id = find_created_id(client, "/sys/roles", token_headers, "name", role_payload["name"])
+        assert_ok(put_json(client, f"/sys/roles/{role_id}/menus", token_headers, {"menus": [1, 2, 3, 53]}))
+        assert_ok(put_json(client, f"/sys/roles/{role_id}/scopes", token_headers, {"scopes": [scope_id]}))
 
-    depts = get_json(client, "/sys/depts", headers)
-    assert_ok(depts)
-    assert isinstance(depts["data"], list)
-    assert [dept["name"] for dept in depts["data"]] == ["测试"]
+        user = {
+            "username": username,
+            "password": "123456",
+            "nickname": "API User",
+            "email": f"{username}@example.com",
+            "phone": "13900000001",
+            "dept_id": 1,
+            "roles": [role_id],
+        }
+        create_body = post_json(client, "/sys/users", token_headers, user)
+        assert_ok(create_body)
+        user_id = int(create_body["data"]["id"])
+        headers = login_headers(client, username, "123456")
+        data_store.created["api_dept_permission_user_id"] = user_id
 
-    assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
-    assert_ok(delete_json(client, "/sys/roles", token_headers, {"pks": [role_id]}))
-    assert_ok(delete_json(client, "/sys/data-scopes", token_headers, {"pks": [scope_id]}))
-    assert_ok(delete_json(client, "/sys/data-rules", token_headers, {"pks": [rule_id]}))
+        depts = get_json(client, "/sys/depts", headers)
+        assert_ok(depts)
+        assert isinstance(depts["data"], list)
+        assert [dept["name"] for dept in depts["data"]] == ["测试"]
+    finally:
+        if user_id is not None:
+            assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+        if role_id is not None:
+            assert_ok(delete_json(client, "/sys/roles", token_headers, {"pks": [role_id]}))
+        assert_ok(delete_json(client, "/sys/data-scopes", token_headers, {"pks": [scope_id]}))
+        assert_ok(delete_json(client, "/sys/data-rules", token_headers, {"pks": [rule_id]}))
 
 
 def test_dept_lifecycle(client: TestClient, token_headers: dict[str, str], data_store: DataStore) -> None:

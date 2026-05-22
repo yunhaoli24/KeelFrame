@@ -66,6 +66,71 @@ def test_user_lifecycle(client: TestClient, token_headers: dict[str, str], data_
     assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
 
 
+def test_created_normal_user_has_seed_role_read_access(
+    client: TestClient, token_headers: dict[str, str], data_store: DataStore
+) -> None:
+    """Test a public-created normal user can use JWT-only read APIs."""
+    username = "api_normal_rbac_user"
+    create_body = post_json(client, "/sys/users", token_headers, user_payload(username))
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+    data_store.created["api_normal_rbac_user_id"] = user_id
+
+    try:
+        headers = login_headers(client, username, "123456")
+        me = get_json(client, "/sys/users/me", headers)
+        assert_ok(me)
+        assert me["data"]["username"] == username
+
+        sidebar = get_json(client, "/sys/menus/sidebar", headers)
+        assert_ok(sidebar)
+        assert isinstance(sidebar["data"], list)
+        assert sidebar["data"]
+
+        depts = get_json(client, "/sys/depts", headers)
+        assert_ok(depts)
+        assert isinstance(depts["data"], list)
+
+        forbidden = client.post("/sys/roles", headers=headers, json={"name": "Normal User Role", "status": 1})
+        assert forbidden.status_code == 403
+        assert_error(forbidden.json(), 403)
+    finally:
+        assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+
+
+def test_created_user_staff_and_superuser_permission_flow(
+    client: TestClient, token_headers: dict[str, str], data_store: DataStore
+) -> None:
+    """Test public permission toggles promote a user from staff to superuser."""
+    username = "api_promoted_admin"
+    create_body = post_json(client, "/sys/users", token_headers, user_payload(username))
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+    data_store.created["api_promoted_admin_id"] = user_id
+    managed_user_id: int | None = None
+
+    try:
+        assert_ok(put_json(client, f"/sys/users/{user_id}/permissions?permission_type=staff", token_headers))
+        staff_headers = login_headers(client, username, "123456")
+        staff_forbidden = client.post("/sys/users", headers=staff_headers, json=user_payload("staff_forbidden_user"))
+        assert staff_forbidden.status_code == 403
+        assert_error(staff_forbidden.json(), 403)
+
+        assert_ok(put_json(client, f"/sys/users/{user_id}/permissions?permission_type=superuser", token_headers))
+        superuser_headers = login_headers(client, username, "123456")
+        managed_user = post_json(client, "/sys/users", superuser_headers, user_payload("api_superuser_created_user"))
+        assert_ok(managed_user)
+        managed_user_id = int(managed_user["data"]["id"])
+
+        detail = get_json(client, f"/sys/users/{managed_user_id}", superuser_headers)
+        assert_ok(detail)
+        assert detail["data"]["username"] == "api_superuser_created_user"
+    finally:
+        if managed_user_id is not None:
+            assert_ok(delete_json(client, f"/sys/users/{managed_user_id}", token_headers))
+        assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))
+
+
 def test_user_permission_toggles(client: TestClient, token_headers: dict[str, str]) -> None:
     """Test user permission toggles exposed by the public API."""
     username = "api_permission_user"

@@ -123,12 +123,12 @@ class TaskSchedulerService:
         :param pk: 任务调度 ID
         :return:
         """
-        workers = await run_in_threadpool(celery_app.control.ping, timeout=0.5)
-        if not workers:
-            raise errors.ServerError(msg="Celery Worker 暂不可用, 请稍后重试")
         task_scheduler = await task_scheduler_dao.get(db, pk)
         if not task_scheduler:
             raise errors.NotFoundError(msg="任务调度不存在")
+        workers = await run_in_threadpool(celery_app.control.ping, timeout=0.5)
+        if not workers:
+            raise errors.ServerError(msg="Celery Worker 暂不可用, 请稍后重试")
         try:
             args = json.loads(task_scheduler.args) if task_scheduler.args else None
             kwargs = json.loads(task_scheduler.kwargs) if task_scheduler.kwargs else None

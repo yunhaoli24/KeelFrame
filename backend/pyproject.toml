@@ -64,6 +64,7 @@ dependencies = [
 dev = [
     "pytest>=9.0.0",
     "pytest-sugar>=1.1.1",
+    "pytest-env>=1.2.0",
     "prek>=0.2.19",
     "types-pyyaml>=6.0.12.20250915",
     "mypy>=1.19.1",
@@ -179,6 +180,30 @@ pythonVersion = "3.13"
 typeCheckingMode = "strict"
 stubPath = "typings"
 
+[tool.pytest_env]
+DATABASE_SCHEMA = "fba_test"
+REDIS_DATABASE = "15"
+CELERY_BROKER_REDIS_DATABASE = "14"
+CELERY_TEST_BEAT_SCHEDULE = "true"
+TOKEN_REDIS_PREFIX = "fba:test:token"
+TOKEN_EXTRA_INFO_REDIS_PREFIX = "fba:test:token_extra_info"
+TOKEN_ONLINE_REDIS_PREFIX = "fba:test:token_online"
+TOKEN_REFRESH_REDIS_PREFIX = "fba:test:refresh_token"
+USER_LOCK_REDIS_PREFIX = "fba:test:user:lock"
+LOGIN_CAPTCHA_REDIS_PREFIX = "fba:test:login:captcha"
+LOGIN_FAILURE_PREFIX = "fba:test:login:failure"
+JWT_USER_REDIS_PREFIX = "fba:test:user"
+REQUEST_LIMITER_REDIS_PREFIX = "fba:test:limiter"
+IP_LOCATION_REDIS_PREFIX = "fba:test:ip:location"
+CELERY_REDIS_PREFIX = "fba:test:celery"
+EMAIL_CAPTCHA_REDIS_PREFIX = "fba:test:email:captcha"
+OBJECT_STORAGE_DEFAULT_PREFIX = "api-tests"
+
+[tool.coverage.run]
+source = ["backend"]
+patch = ["subprocess"]
+sigterm = true
+
 [tool.coverage.report]
 skip_covered = true
 exclude_also = [
@@ -196,4 +221,8 @@ exclude_also = [
     "no cover: start(?s:.)*?no cover: stop",
     "\\A(?s:.*# pragma: exclude file.*)\\Z",
 ]
-omit = ["*/alembic/*"]
+omit = [
+    "*/alembic/*",
+    "backend/cli.py",
+    "*/utils/*",
+]

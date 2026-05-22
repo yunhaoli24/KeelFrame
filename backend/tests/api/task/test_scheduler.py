@@ -82,6 +82,27 @@ def test_scheduler_crontab_update_and_conflict(client: TestClient, token_headers
     assert_ok(delete_json(client, f"/schedulers/{target_id}", token_headers))
 
 
+def test_scheduler_execute_existing_task(
+    client: TestClient,
+    token_headers: dict[str, str],
+    data_store: DataStore,
+) -> None:
+    """Test manual execution submits an existing scheduler to the test Celery worker."""
+    payload = scheduler_payload("api-executable-scheduler") | {
+        "task": "task_demo_params",
+        "args": '["hello"]',
+        "kwargs": '{"world": "-api"}',
+    }
+    assert_ok(post_json(client, "/schedulers", token_headers, payload))
+    scheduler_id = find_created_id(client, "/schedulers", token_headers, "name", payload["name"])
+    data_store.created["executable_scheduler_id"] = scheduler_id
+
+    try:
+        assert_ok(post_json(client, f"/schedulers/{scheduler_id}/execute", token_headers, None))
+    finally:
+        assert_ok(delete_json(client, f"/schedulers/{scheduler_id}", token_headers))
+
+
 def test_scheduler_missing(client: TestClient, token_headers: dict[str, str]) -> None:
     """Test scheduler not-found responses."""
     for method, path in (
@@ -109,5 +130,5 @@ def test_scheduler_missing(client: TestClient, token_headers: dict[str, str]) ->
     assert_error(crontab_response.json(), 400)
 
     execute_missing = client.post("/schedulers/999999/execute", headers=token_headers)
-    assert execute_missing.status_code in {404, 500}
-    assert_error(execute_missing.json(), execute_missing.status_code)
+    assert execute_missing.status_code == 404
+    assert_error(execute_missing.json(), 404)

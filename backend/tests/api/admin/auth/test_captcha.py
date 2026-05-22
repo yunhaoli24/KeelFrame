@@ -12,4 +12,3 @@ def test_captcha(client: TestClient) -> None:
     body = response.json()
     assert_ok(body)
     assert "is_enabled" in body["data"]
-

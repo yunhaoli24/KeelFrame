@@ -7,7 +7,6 @@ from starlette.testclient import TestClient
 
 from tests.types import JsonObject
 from tests.conftest import DataStore
-from backend.core.conf import settings
 from tests.api.helpers import assert_ok, post_json, delete_json, assert_error, post_multipart, find_created_id
 
 
@@ -19,10 +18,10 @@ def object_filename_from_backend_url(url: str) -> str:
     return filename
 
 
-def api_path_from_backend_url(url: str) -> str:
+def api_path_from_backend_url(url: str, api_v1_path: str) -> str:
     """Return the TestClient path for a backend API URL."""
-    assert url.startswith(settings.FASTAPI_API_V1_PATH)
-    return url.removeprefix(settings.FASTAPI_API_V1_PATH)
+    assert url.startswith(api_v1_path)
+    return url.removeprefix(api_v1_path)
 
 
 def upload_url(response_json: JsonObject) -> str:
@@ -38,14 +37,15 @@ def test_s3_file_upload_against_rustfs(
     client: TestClient, token_headers: dict[str, str], data_store: DataStore
 ) -> None:
     """Test object upload through the S3 file API using a real RustFS backend."""
+    backend_settings = data_store.backend_settings
     payload = {
         "name": "api-s3-rustfs",
-        "endpoint": settings.OBJECT_STORAGE_DEFAULT_ENDPOINT,
-        "access_key": settings.OBJECT_STORAGE_DEFAULT_ACCESS_KEY,
-        "secret_key": settings.OBJECT_STORAGE_DEFAULT_SECRET_KEY,
-        "bucket": settings.OBJECT_STORAGE_DEFAULT_BUCKET,
+        "endpoint": backend_settings["object_storage_default_endpoint"],
+        "access_key": backend_settings["object_storage_default_access_key"],
+        "secret_key": backend_settings["object_storage_default_secret_key"],
+        "bucket": backend_settings["object_storage_default_bucket"],
         "prefix": "api-tests",
-        "region": settings.OBJECT_STORAGE_DEFAULT_REGION,
+        "region": backend_settings["object_storage_default_region"],
         "remark": "api",
     }
     assert_ok(post_json(client, "/s3/storages", token_headers, payload))
@@ -61,11 +61,12 @@ def test_s3_file_upload_against_rustfs(
     )
     assert_ok(body)
     url = upload_url(body)
-    assert url.startswith(f"{settings.FASTAPI_API_V1_PATH}/s3/files/path/{storage_id}/report_")
-    assert settings.OBJECT_STORAGE_DEFAULT_ENDPOINT not in url
+    api_v1_path = backend_settings["api_v1_path"]
+    assert url.startswith(f"{api_v1_path}/s3/files/path/{storage_id}/report_")
+    assert not url.startswith(("http://", "https://"))
     assert url.endswith(".txt")
     assert object_filename_from_backend_url(url).startswith("report_")
-    response = client.get(api_path_from_backend_url(url), headers=token_headers)
+    response = client.get(api_path_from_backend_url(url, api_v1_path), headers=token_headers)
     assert response.status_code == 200
     assert response.content == b"hello-rustfs"
     assert_ok(delete_json(client, "/s3/storages", token_headers, {"pks": [storage_id]}))
