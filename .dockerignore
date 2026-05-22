@@ -3,8 +3,15 @@ __pycache__/
 .github/
 .idea/
 .vscode/
+frontend/
 venv/
 .venv/
+backend/.venv/
+backend/.coverage*
+backend/.mypy_cache/
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/__pycache__/
 .ruff_cache/
 .pytest_cache/
 .mypy_cache/

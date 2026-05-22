@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import math
 import heapq
 import asyncio
@@ -80,12 +79,8 @@ class ModelEntry(ScheduleEntry):
             logger.exception("禁用计划为空的任务 %s", self.name)
             asyncio.create_task(self._disable(model))  # noqa: RUF006
 
-        try:
-            self.args = json.loads(model.args) if model.args else None
-            self.kwargs = json.loads(model.kwargs) if model.kwargs else None
-        except ValueError:
-            logger.exception("禁用参数错误的任务: %s", self.name)
-            asyncio.create_task(self._disable(model))  # noqa: RUF006
+        self.args = tuple(model.args) if model.args is not None else None
+        self.kwargs = model.kwargs
 
         self.options = {}
         for option in ["queue", "exchange", "routing_key"]:
@@ -248,8 +243,8 @@ class ModelEntry(ScheduleEntry):
             except KeyError:
                 continue
         model_dict.update(
-            args=json.dumps(args, ensure_ascii=False) if args else None,
-            kwargs=json.dumps(kwargs, ensure_ascii=False) if kwargs else None,
+            args=args,
+            kwargs=kwargs,
             **cls._unpack_options(**options or {}),
             **entry,
         )

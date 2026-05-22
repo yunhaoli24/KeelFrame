@@ -75,11 +75,6 @@ metrics_generator:
         # Exemplar 将指标数据点与 Trace ID 关联
         # 实现从指标图表点击跳转到对应 Trace
 
-  traces_storage:
-    path: /tmp/tempo/generator/traces
-    # Trace 数据临时存储路径
-    # 用于指标生成器处理 Trace 数据
-
   processor:
     # 处理器配置
     # 定义如何从 Trace 生成指标
@@ -104,13 +99,6 @@ metrics_generator:
       dimensions:
         - service.name
 
-    local_blocks:
-      # 本地块处理器
-      # 处理本地存储的 Trace 数据块
-
-      flush_to_storage: true
-      # 是否将处理后的数据刷新到存储
-
 # overrides: 覆盖配置
 overrides:
   defaults:
@@ -124,4 +112,3 @@ overrides:
 
         - span-metrics
         - service-graphs
-        - local-blocks

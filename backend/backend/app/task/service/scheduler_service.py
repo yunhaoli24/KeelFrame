@@ -1,6 +1,5 @@
 """Scheduler Service."""
 
-import json
 from typing import Any, cast
 from collections.abc import Sequence
 
@@ -129,14 +128,14 @@ class TaskSchedulerService:
         workers = await run_in_threadpool(celery_app.control.ping, timeout=0.5)
         if not workers:
             raise errors.ServerError(msg="Celery Worker 暂不可用, 请稍后重试")
-        try:
-            args = json.loads(task_scheduler.args) if task_scheduler.args else None
-            kwargs = json.loads(task_scheduler.kwargs) if task_scheduler.kwargs else None
-        except (TypeError, json.JSONDecodeError) as e:
-            raise errors.RequestError(msg="执行失败, 任务参数非法") from e
-        else:
-            send_task = cast("Any", celery_app).send_task
-            send_task(name=task_scheduler.task, args=args, kwargs=kwargs)
+        args = cast("object", task_scheduler.args)
+        kwargs = cast("object", task_scheduler.kwargs)
+        if args is not None and not isinstance(args, list):
+            raise errors.RequestError(msg="执行失败, 任务参数非法")
+        if kwargs is not None and not isinstance(kwargs, dict):
+            raise errors.RequestError(msg="执行失败, 任务参数非法")
+        send_task = cast("Any", celery_app).send_task
+        send_task(name=task_scheduler.task, args=args, kwargs=kwargs)
 
 
 task_scheduler_service: TaskSchedulerService = TaskSchedulerService()
