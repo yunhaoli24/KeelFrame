@@ -121,6 +121,14 @@ def test_role_error_branches(client: TestClient, token_headers: dict[str, str]) 
 
     assert_ok(post_json(client, "/sys/roles", token_headers, {"name": "API Duplicate Update Role", "status": 1}))
     role_id = find_created_id(client, "/sys/roles", token_headers, "name", "API Duplicate Update Role")
+    empty_menus = client.put(f"/sys/roles/{role_id}/menus", headers=token_headers, json={"menus": []})
+    assert empty_menus.status_code == 200
+    assert_error(empty_menus.json(), 400)
+
+    empty_scopes = client.put(f"/sys/roles/{role_id}/scopes", headers=token_headers, json={"scopes": []})
+    assert empty_scopes.status_code == 200
+    assert_error(empty_scopes.json(), 400)
+
     duplicate_update = client.put(
         f"/sys/roles/{role_id}",
         headers=token_headers,

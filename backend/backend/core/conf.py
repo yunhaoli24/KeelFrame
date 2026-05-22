@@ -146,7 +146,7 @@ class Settings(BaseSettings):
     UPLOAD_VIDEO_SIZE_MAX: int = 20 * 1024 * 1024  # 20 MB
     OBJECT_STORAGE_DEFAULT_ENDPOINT: str = "http://127.0.0.1:9000"
     OBJECT_STORAGE_DEFAULT_ACCESS_KEY: str = "rustfsadmin"
-    OBJECT_STORAGE_DEFAULT_SECRET_KEY: str = "ChangeMe123!"
+    OBJECT_STORAGE_DEFAULT_SECRET_KEY: str = "ChangeMe123!"  # noqa: S105
     OBJECT_STORAGE_DEFAULT_BUCKET: str = "fba-static"
     OBJECT_STORAGE_DEFAULT_PREFIX: str = "uploads"
     OBJECT_STORAGE_DEFAULT_REGION: str = "auto"

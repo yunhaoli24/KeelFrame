@@ -1,7 +1,5 @@
 """Default object storage service."""
 
-from dataclasses import dataclass
-
 from fastapi import UploadFile
 from opendal import AsyncOperator
 from fastapi.responses import Response
@@ -10,18 +8,7 @@ from backend.core.conf import settings
 from backend.utils.file_ops import build_filename
 from backend.common.exception import errors
 from backend.app.s3.utils.file_ops import proxy_s3_get, build_s3_object_url
-
-
-@dataclass(frozen=True)
-class ObjectStorageConfig:
-    """Resolved object storage configuration."""
-
-    endpoint: str
-    access_key: str
-    secret_key: str
-    bucket: str
-    prefix: str
-    region: str
+from backend.app.s3.schema.object_storage import ObjectUploadResult, ObjectStorageConfig
 
 
 class ObjectStorageService:
@@ -54,8 +41,8 @@ class ObjectStorageService:
         )
 
     @classmethod
-    async def upload_default_file(cls, file: UploadFile) -> str:
-        """Upload a file to the default object storage and return its filename."""
+    async def upload_default_file(cls, file: UploadFile) -> ObjectUploadResult:
+        """Upload a file to the default object storage and return object metadata."""
         filename = build_filename(file)
         config = cls.get_default_config()
         operator = cls.get_operator(config)
@@ -64,14 +51,14 @@ class ObjectStorageService:
             raise errors.RequestError(msg="上传文件不能为空")
         await operator.write(filename, contents)
         await file.close()
-        return filename
+        return ObjectUploadResult(filename=filename, size=len(contents))
 
     @classmethod
     async def read_default_file(cls, filename: str) -> bytes:
         """Read a file from the default object storage."""
         config = cls.get_default_config()
         operator = cls.get_operator(config)
-        return bytes(await operator.read(filename))
+        return bytes(await operator.read(filename))  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]
 
     @classmethod
     async def proxy_default_file(cls, filename: str) -> Response:

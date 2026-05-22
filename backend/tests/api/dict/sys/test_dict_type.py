@@ -68,4 +68,7 @@ def test_dict_type_missing(client: TestClient, token_headers: dict[str, str]) ->
     delete_missing = client.request("DELETE", "/sys/dict-types", headers=token_headers, json={"pks": [999999]})
     assert delete_missing.status_code == 200
     assert_error(delete_missing.json(), 400)
+    empty_delete = client.request("DELETE", "/sys/dict-types", headers=token_headers, json={"pks": []})
+    assert empty_delete.status_code == 200
+    assert_error(empty_delete.json(), 400)
     assert_ok(delete_json(client, "/sys/dict-types", token_headers, {"pks": [rename_id]}))

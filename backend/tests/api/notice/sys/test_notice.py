@@ -46,3 +46,7 @@ def test_notice_missing(client: TestClient, token_headers: dict[str, str]) -> No
     missing_delete = client.request("DELETE", "/sys/notices", headers=token_headers, json={"pks": [999999]})
     assert missing_delete.status_code == 200
     assert_error(missing_delete.json(), 400)
+
+    empty_delete = client.request("DELETE", "/sys/notices", headers=token_headers, json={"pks": []})
+    assert empty_delete.status_code == 200
+    assert_error(empty_delete.json(), 400)

@@ -113,6 +113,9 @@ class CRUDDataScope(CRUDPlus[DataScope]):
         delete_stmt = delete(data_scope_rule).where(data_scope_rule.c.data_scope_id == pk)
         await db.execute(delete_stmt)
 
+        if not rule_ids.rules:
+            return 0
+
         data_scope_rule_data = [
             CreateDataScopeRuleParam(data_scope_id=pk, data_rule_id=rule_id).model_dump() for rule_id in rule_ids.rules
         ]

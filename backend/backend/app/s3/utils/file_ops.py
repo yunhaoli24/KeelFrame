@@ -106,4 +106,4 @@ async def read_file(s3_storage: S3Storage, filename: str) -> bytes:
         s3_storage.prefix or "/",
         s3_storage.region or "any",
     )
-    return bytes(await op.read(filename))
+    return bytes(await op.read(filename))  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType, reportUnknownArgumentType]

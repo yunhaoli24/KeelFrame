@@ -58,6 +58,14 @@ def test_data_scope_error_branches(client: TestClient, token_headers: dict[str, 
     assert duplicate.status_code == 409
     assert_error(duplicate.json(), 409)
 
+    empty_rules = client.put(f"/sys/data-scopes/{scope_id}/rules", headers=token_headers, json={"rules": []})
+    assert empty_rules.status_code == 200
+    assert_error(empty_rules.json(), 400)
+
+    missing_scope_rules = client.put("/sys/data-scopes/999999/rules", headers=token_headers, json={"rules": []})
+    assert missing_scope_rules.status_code == 200
+    assert_error(missing_scope_rules.json(), 400)
+
     missing_update = client.put(
         "/sys/data-scopes/999999",
         headers=token_headers,

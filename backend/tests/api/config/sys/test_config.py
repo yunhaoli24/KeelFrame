@@ -76,4 +76,16 @@ def test_config_error_branches(client: TestClient, token_headers: dict[str, str]
     missing_update = client.put("/sys/configs/999999", headers=token_headers, json=config_payload("MISSING_UPDATE"))
     assert missing_update.status_code == 404
     assert_error(missing_update.json(), 404)
+
+    bulk_conflict = client.put(
+        "/sys/configs",
+        headers=token_headers,
+        json=[config_payload("API_CONFIG_DUPLICATE") | {"id": source_id}],
+    )
+    assert bulk_conflict.status_code == 409
+    assert_error(bulk_conflict.json(), 409)
+
+    empty_delete = client.request("DELETE", "/sys/configs", headers=token_headers, json=[])
+    assert empty_delete.status_code == 200
+    assert_error(empty_delete.json(), 400)
     assert_ok(delete_json(client, "/sys/configs", token_headers, [source_id]))

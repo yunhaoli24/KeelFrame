@@ -80,8 +80,34 @@ def test_dict_data_missing(client: TestClient, token_headers: dict[str, str]) ->
     assert missing_update.status_code == 404
     assert_error(missing_update.json(), 404)
 
+    missing_type_update = client.put(
+        f"/sys/dict-datas/{dict_data_id}",
+        headers=token_headers,
+        json=payload | {"type_id": 999999},
+    )
+    assert missing_type_update.status_code == 404
+    assert_error(missing_type_update.json(), 404)
+
+    assert_ok(
+        post_json(
+            client,
+            "/sys/dict-datas",
+            token_headers,
+            dict_data_payload(dict_type_id, "Duplicate Dict Data Target"),
+        )
+    )
+    target_id = find_created_id(client, "/sys/dict-datas", token_headers, "label", "Duplicate Dict Data Target")
+    duplicate_update = client.put(
+        f"/sys/dict-datas/{dict_data_id}",
+        headers=token_headers,
+        json=payload | {"label": "Duplicate Dict Data Target"},
+    )
+    assert duplicate_update.status_code == 409
+    assert_error(duplicate_update.json(), 409)
+
     delete_missing = client.request("DELETE", "/sys/dict-datas", headers=token_headers, json={"pks": [999999]})
     assert delete_missing.status_code == 200
     assert_error(delete_missing.json(), 400)
+    assert_ok(delete_json(client, "/sys/dict-datas", token_headers, {"pks": [target_id]}))
     assert_ok(delete_json(client, "/sys/dict-datas", token_headers, {"pks": [dict_data_id]}))
     assert_ok(delete_json(client, "/sys/dict-types", token_headers, {"pks": [dict_type_id]}))

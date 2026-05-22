@@ -34,8 +34,8 @@ def build_system_file_download_url(filename: str) -> str:
 async def upload_files(file: Annotated[UploadFile, File()]) -> ResponseSchemaModel[UploadUrl]:
     """Upload Files."""
     upload_file_verify(file)
-    filename = await object_storage_service.upload_default_file(file)
-    return response_base.success(data={"url": build_system_file_download_url(filename)})
+    upload_result = await object_storage_service.upload_default_file(file)
+    return response_base.success(data={"url": build_system_file_download_url(upload_result.filename)})
 
 
 @router.get(

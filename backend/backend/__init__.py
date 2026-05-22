@@ -2,7 +2,7 @@
 
 import sqlalchemy as sa
 
-from backend.app.s3.model import S3Storage
+from backend.app.s3.model import S3File, S3Storage
 from backend.app.dict.model import DictData, DictType
 from backend.app.task.model import TaskResult, TaskScheduler
 from backend.app.admin.model import (
@@ -36,6 +36,7 @@ ALL_MODELS: tuple[object, ...] = (
     Notice,
     OperaLog,
     Role,
+    S3File,
     S3Storage,
     TaskResult,
     TaskScheduler,

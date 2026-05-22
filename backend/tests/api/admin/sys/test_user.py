@@ -171,6 +171,22 @@ def test_profile_update_apis(client: TestClient, token_headers: dict[str, str]) 
 
 def test_user_error_branches(client: TestClient, token_headers: dict[str, str]) -> None:
     """Test user router error branches."""
+    empty_password = client.post(
+        "/sys/users",
+        headers=token_headers,
+        json=user_payload("api_empty_password_user") | {"password": ""},
+    )
+    assert empty_password.status_code == 400
+    assert_error(empty_password.json(), 400)
+
+    missing_dept = client.post(
+        "/sys/users",
+        headers=token_headers,
+        json=user_payload("api_missing_dept_user") | {"dept_id": 999999},
+    )
+    assert missing_dept.status_code == 404
+    assert_error(missing_dept.json(), 404)
+
     duplicate = client.post("/sys/users", headers=token_headers, json=user_payload("admin"))
     assert duplicate.status_code == 409
     assert_error(duplicate.json(), 409)
@@ -182,6 +198,14 @@ def test_user_error_branches(client: TestClient, token_headers: dict[str, str]) 
     )
     assert missing_role.status_code == 404
     assert_error(missing_role.json(), 404)
+
+    missing_update = client.put("/sys/users/999999", headers=token_headers, json=user_payload("missing_user_update"))
+    assert missing_update.status_code == 404
+    assert_error(missing_update.json(), 404)
+
+    missing_reset = client.put("/sys/users/999999/password", headers=token_headers, json={"password": "abc123"})
+    assert missing_reset.status_code == 404
+    assert_error(missing_reset.json(), 404)
 
     self_permission = client.put("/sys/users/1/permissions?permission_type=staff", headers=token_headers)
     assert self_permission.status_code == 403
@@ -214,3 +238,66 @@ def test_user_error_branches(client: TestClient, token_headers: dict[str, str]) 
     )
     assert password_response.status_code == 400
     assert_error(password_response.json(), 400)
+
+
+def test_user_update_error_branches(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test user update validation branches through the public API."""
+    first_user_id: int | None = None
+    second_user_id: int | None = None
+    try:
+        first = post_json(client, "/sys/users", token_headers, user_payload("api_update_source_user"))
+        assert_ok(first)
+        first_user_id = int(first["data"]["id"])
+
+        second = post_json(client, "/sys/users", token_headers, user_payload("api_update_target_user"))
+        assert_ok(second)
+        second_user_id = int(second["data"]["id"])
+
+        duplicate_username = client.put(
+            f"/sys/users/{second_user_id}",
+            headers=token_headers,
+            json=user_payload("api_update_source_user"),
+        )
+        assert duplicate_username.status_code == 409
+        assert_error(duplicate_username.json(), 409)
+
+        missing_dept = client.put(
+            f"/sys/users/{second_user_id}",
+            headers=token_headers,
+            json=user_payload("api_update_target_user") | {"dept_id": 999999},
+        )
+        assert missing_dept.status_code == 404
+        assert_error(missing_dept.json(), 404)
+
+        missing_role = client.put(
+            f"/sys/users/{second_user_id}",
+            headers=token_headers,
+            json=user_payload("api_update_target_user") | {"roles": [999999]},
+        )
+        assert missing_role.status_code == 404
+        assert_error(missing_role.json(), 404)
+    finally:
+        if second_user_id is not None:
+            assert_ok(delete_json(client, f"/sys/users/{second_user_id}", token_headers))
+        if first_user_id is not None:
+            assert_ok(delete_json(client, f"/sys/users/{first_user_id}", token_headers))
+
+
+def test_current_user_password_confirm_mismatch(client: TestClient, token_headers: dict[str, str]) -> None:
+    """Test current-user password confirmation validation through login token auth."""
+    username = "api_password_confirm_user"
+    create_body = post_json(client, "/sys/users", token_headers, user_payload(username))
+    assert_ok(create_body)
+    user_id = int(create_body["data"]["id"])
+
+    try:
+        headers = login_headers(client, username, "123456")
+        response = client.put(
+            "/sys/users/me/password",
+            headers=headers,
+            json={"old_password": "123456", "new_password": "abc123", "confirm_password": "abc124"},
+        )
+        assert response.status_code == 400
+        assert_error(response.json(), 400)
+    finally:
+        assert_ok(delete_json(client, f"/sys/users/{user_id}", token_headers))

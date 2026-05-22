@@ -2,7 +2,7 @@
 
 from starlette.testclient import TestClient
 
-from tests.conftest import DataStore
+from tests.conftest import DataStore, login_headers
 from tests.api.helpers import (
     get_json,
     put_json,
@@ -132,3 +132,35 @@ def test_scheduler_missing(client: TestClient, token_headers: dict[str, str]) ->
     execute_missing = client.post("/schedulers/999999/execute", headers=token_headers)
     assert execute_missing.status_code == 404
     assert_error(execute_missing.json(), 404)
+
+    bad_args = scheduler_payload("api-bad-execute-args") | {"args": "not-json", "kwargs": "{}"}
+    assert_ok(post_json(client, "/schedulers", token_headers, bad_args))
+    bad_args_id = find_created_id(client, "/schedulers", token_headers, "name", bad_args["name"])
+    execute_bad_args = client.post(f"/schedulers/{bad_args_id}/execute", headers=token_headers)
+    assert execute_bad_args.status_code == 400
+    assert_error(execute_bad_args.json(), 400)
+    assert_ok(delete_json(client, f"/schedulers/{bad_args_id}", token_headers))
+
+
+def test_scheduler_write_apis_reject_normal_user(client: TestClient, data_store: DataStore) -> None:
+    """Test scheduler write APIs reject a normal authenticated user."""
+    headers = data_store.test_headers or login_headers(client, "test", "123456")
+    create_response = client.post("/schedulers", headers=headers, json=scheduler_payload("normal-scheduler"))
+    assert create_response.status_code == 403
+    assert_error(create_response.json(), 403)
+
+    update_response = client.put("/schedulers/1", headers=headers, json=scheduler_payload("normal-scheduler"))
+    assert update_response.status_code == 403
+    assert_error(update_response.json(), 403)
+
+    status_response = client.put("/schedulers/1/status", headers=headers)
+    assert status_response.status_code == 403
+    assert_error(status_response.json(), 403)
+
+    execute_response = client.post("/schedulers/1/execute", headers=headers)
+    assert execute_response.status_code == 403
+    assert_error(execute_response.json(), 403)
+
+    delete_response = client.request("DELETE", "/schedulers/1", headers=headers)
+    assert delete_response.status_code == 403
+    assert_error(delete_response.json(), 403)

@@ -7,7 +7,6 @@ from fastapi.params import Query
 
 from backend.database.db import CurrentSession, CurrentSessionTransaction
 from backend.common.pagination import PageData, DependsPagination
-from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.rbac import DependsRBAC
 from backend.app.s3.schema.storage import (
     GetS3StorageDetail,
@@ -23,14 +22,28 @@ from backend.common.response.response_schema import ResponseModel, ResponseSchem
 router = APIRouter()
 
 
-@router.get("/all", summary="获取所有 S3 存储详情", dependencies=[DependsJwtAuth])  # pyright: ignore[reportGeneralTypeIssues]
+@router.get(
+    "/all",
+    summary="获取所有 S3 存储详情",
+    dependencies=[
+        Depends(RequestPermission("s3:storage:query")),
+        DependsRBAC,
+    ],
+)  # pyright: ignore[reportGeneralTypeIssues]
 async def get_all_s3_storages(db: CurrentSession) -> ResponseSchemaModel[list[GetS3StorageDetail]]:
     """Get All S3 Storages."""
     s3_storage = await s3_storage_service.get_all(db=db)
     return response_base.success(data=s3_storage)
 
 
-@router.get("/{pk}", summary="获取 S3 存储详情", dependencies=[DependsJwtAuth])  # pyright: ignore[reportGeneralTypeIssues]
+@router.get(
+    "/{pk}",
+    summary="获取 S3 存储详情",
+    dependencies=[
+        Depends(RequestPermission("s3:storage:query")),
+        DependsRBAC,
+    ],
+)  # pyright: ignore[reportGeneralTypeIssues]
 async def get_s3_storage(
     db: CurrentSession, pk: Annotated[int, Path(description="S3 存储 ID")]
 ) -> ResponseSchemaModel[GetS3StorageDetail]:
@@ -43,7 +56,8 @@ async def get_s3_storage(
     "",
     summary="分页获取所有 S3 存储",
     dependencies=[
-        DependsJwtAuth,
+        Depends(RequestPermission("s3:storage:query")),
+        DependsRBAC,
         DependsPagination,
     ],
 )  # pyright: ignore[reportGeneralTypeIssues]
