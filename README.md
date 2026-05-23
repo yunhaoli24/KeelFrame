@@ -1,4 +1,4 @@
-# Full Stack RBAC Template
+# KeelFrame
 
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](backend/pyproject.toml)
 [![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](.github/workflows/frontend-lint.yml)
@@ -10,22 +10,18 @@
 [![Coverage](https://img.shields.io/badge/Coverage-85%25+-31C654?logo=codecov&logoColor=white)](backend/.pre-commit-config.yaml)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](frontend/package.json)
 
-这是一个面向 AI Native 时代开发的 RBAC 全栈模板项目。它的目标不是只提供一套能跑起来的后台管理演示，而是提供一个干净、完整、可验证的项目骨架：AI 生成的每一行代码，都必须被自动测试、自动构建和自动部署验证，最终用 CI/CD 结果证明它能用。
+KeelFrame 是面向 AI Native 开发的全栈工程底座，用来启动并持续演进后台类业务系统。
 
-AI 可以把开发速度提升几个数量级，但这种提升只有在好起点上才可靠。一个充满最佳实践、边界清晰、上下文不被污染的仓库，可以让 Agent 更容易理解系统；完整的测试和质量门禁，则能让 Agent 自动发现问题、定位问题并继续修复问题。
+AI 能显著提高开发速度，但可靠交付依赖坚实起点：清晰边界、干净上下文、完整测试和质量门禁。KeelFrame 把这些约束放进同一个仓库，让 Agent 更容易理解系统，并用测试和构建反馈持续定位、修复问题。
 
-项目采用前后端分离结构：后端以 FastAPI 为核心，提供 RBAC 权限控制、管理后台 API、任务调度、插件化能力和可观测性基础；前端以 Vue 3、Vite、shadcn-vue 和 Tailwind CSS 为核心，提供后台管理界面、路由守卫、系统管理页面和统一 API 调用入口。后续业务开发可以在这个基础上直接扩展领域模型、业务页面和接口测试。
+仓库已包含前端管理台、后端 API、RBAC 权限模型、任务调度、本地联调脚本、测试入口和构建入口。业务开发可以直接扩展页面、领域模型和接口，并让新增代码进入测试、构建和 CI/CD 验证闭环。
 
 ## 项目定位
 
-- AI Native 开发骨架：为 AI Agent 提供清晰的项目边界、稳定的目录入口和可持续验证的工程流程。
-- CI/CD 结果证明可用：代码合并前必须经过自动化质量门禁，交付结果以流水线验证结果为准。
-- 测试驱动的 AI 协作：前后端都保留完整测试入口，让 Agent 可以通过测试失败自动发现并修复问题。
-- RBAC 模板：内置用户、角色、菜单、部门、数据范围、数据规则等后台权限模型。
-- 全栈脚手架：前端管理台、后端 API、数据库、缓存、任务队列和后台任务入口放在同一个仓库内维护。
-- 开发壳子：保留通用后台能力，业务项目只需要在此基础上新增业务模块。
-- 测试优先：后端以 pytest 覆盖 API 边界，前端以 Vitest 覆盖路由、状态和 API 调用等核心行为。
-- 本地联调友好：根目录 `./dev.sh` 统一拉起前端、后端 API、Celery worker、Celery beat 和 Celery flower。
+- 给 Agent 一个稳定上下文：目录边界、开发入口、测试入口和质量门禁集中在仓库内，减少协作时的上下文漂移。
+- 让修改能被机器验证：后端黑盒 HTTP 测试、前端单元测试、构建脚本和 CI/CD 共同证明代码可用。
+- 保留后台业务通用底座：用户、角色、菜单、部门、数据范围、数据规则、任务调度和系统管理能力可以直接扩展。
+- 支持本地完整联调：根目录 `./dev.sh` 统一拉起前端、后端 API、Celery worker、Celery beat 和 Celery flower。
 
 ## 已包含能力
 
