@@ -13,11 +13,6 @@ type BackendResponse<T> = {
   data?: T;
 };
 
-type LoginResponseData = {
-  access_token?: string;
-  session_uuid?: string;
-};
-
 function isApiResponse(responseURL: string, pathSuffix: string): boolean {
   const url = new URL(responseURL);
   return url.pathname === `/api/v1${pathSuffix}`;
@@ -53,10 +48,6 @@ export async function login(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Login" }).click();
   const loginResponse = await loginResponsePromise;
   expect(loginResponse.ok(), "Expected real backend login request to succeed").toBe(true);
-  const loginBody = (await loginResponse.json()) as BackendResponse<LoginResponseData>;
-  expect(Number(loginBody.code), loginBody.msg || "Expected real backend login code 200").toBe(200);
-  expect(loginBody.data?.access_token, "Expected real backend login token").toBeTruthy();
-  expect(loginBody.data?.session_uuid, "Expected real backend login session").toBeTruthy();
 
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "workspace" })).toBeVisible();

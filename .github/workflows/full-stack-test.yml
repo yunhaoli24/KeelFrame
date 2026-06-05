@@ -113,6 +113,38 @@ jobs:
         working-directory: backend
         run: bash pre-commit.sh
 
+      - name: Reset backend state for E2E
+        working-directory: backend
+        run: |
+          uv run python <<'PY'
+          import asyncio
+          import os
+
+          import psycopg
+          from redis.asyncio import Redis
+
+
+          if os.environ.get("GITHUB_ACTIONS") != "true":
+              raise SystemExit("Refusing to reset backend state outside GitHub Actions.")
+
+          with psycopg.connect("postgresql://postgres:123456@127.0.0.1:5432/postgres", autocommit=True) as conn:
+              with conn.cursor() as cur:
+                  cur.execute("DROP DATABASE IF EXISTS fba WITH (FORCE)")
+                  cur.execute("CREATE DATABASE fba")
+
+
+          async def main() -> None:
+              for database in (0, 1):
+                  redis = Redis(host="127.0.0.1", port=6379, db=database, decode_responses=True)
+                  try:
+                      await redis.flushdb()
+                  finally:
+                      await redis.aclose()
+
+
+          asyncio.run(main())
+          PY
+
       - name: Run backend migrations for E2E
         working-directory: backend
         run: uv run fba migrate
