@@ -24,7 +24,10 @@
     "build": "vp build",
     "preview": "vp preview",
     "check": "vp check",
-    "test": "vp test",
+    "test": "pnpm run test:coverage",
+    "test:e2e": "pnpm run test:coverage",
+    "test:e2e:ui": "playwright test --ui",
+    "test:coverage": "rm -rf .nyc_output coverage && E2E_COVERAGE=true playwright test && nyc report",
     "lint": "vp check --fix",
     "release": "npx changelogen@latest --release"
   },
@@ -89,15 +92,16 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@faker-js/faker": "^10.4.0",
     "@iconify-json/simple-icons": "^1.2.83",
     "@iconify/vue": "^5.0.1",
+    "@playwright/test": "^1.60.0",
     "@tanstack/vue-query-devtools": "^6.1.30",
     "@types/node": "^25.9.1",
     "@types/nprogress": "^0.2.3",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitejs/plugin-vue-jsx": "^5.1.5",
     "autoprefixer": "^10.5.0",
+    "nyc": "^18.0.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "simple-git-hooks": "^2.13.1",
     "tailwindcss": "^4.3.0",
@@ -105,12 +109,35 @@
     "unplugin-auto-import": "^21.0.0",
     "unplugin-vue-components": "^32.1.0",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.1.22",
+    "vite-plugin-istanbul": "^9.0.1",
     "vite-plugin-vue-devtools": "^8.1.2",
     "vite-plugin-vue-layouts": "^0.11.0",
-    "vite-plus": "^0.1.22",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@0.1.22"
+    "vite-plus": "^0.1.22"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec vp staged"
+  },
+  "nyc": {
+    "all": true,
+    "exclude": [
+      "src/**/*.d.ts",
+      "src/route-map.d.ts",
+      "src/types/**"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx",
+      ".vue"
+    ],
+    "include": [
+      "src/**/*.{ts,tsx,vue}"
+    ],
+    "report-dir": "coverage",
+    "reporter": [
+      "text",
+      "html",
+      "lcov"
+    ],
+    "temp-dir": ".nyc_output"
   }
 }

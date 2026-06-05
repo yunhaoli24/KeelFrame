@@ -83,12 +83,12 @@ export function useAuth() {
   const authStore = useAuthStore(pinia);
   const loading = ref(false);
 
-  function redirectAfterLogin() {
+  async function redirectAfterLogin() {
     const redirect = router.currentRoute.value.query.redirect as string;
     if (!redirect || redirect.startsWith("//")) {
-      void router.push({ path: "/dashboard" });
+      await router.push({ path: "/dashboard" });
     } else {
-      void router.push(redirect);
+      await router.push(redirect);
     }
   }
 
@@ -112,7 +112,7 @@ export function useAuth() {
 
       // 存储认证信息到store
       authStore.setAuthInfo(data.access_token, data.session_uuid, data.user);
-      redirectAfterLogin();
+      await redirectAfterLogin();
     } catch (error: unknown) {
       console.error("Login error:", error);
       const authError = normalizeAuthError(error);
