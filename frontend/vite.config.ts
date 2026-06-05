@@ -7,10 +7,12 @@ import AutoImport from "unplugin-auto-import/vite";
 import Component from "unplugin-vue-components/vite";
 import VueRouter from "vue-router/vite";
 import { defineConfig } from "vite-plus";
+import istanbul from "vite-plugin-istanbul";
 import vueDevTools from "vite-plugin-vue-devtools";
 import Layouts from "vite-plugin-vue-layouts";
 
 const RouteGenerateExclude = ["**/components/**", "**/layouts/**", "**/data/**", "**/types/**"];
+const proxyApiURL = process.env.VITE_PROXY_API_URL ?? "http://localhost:8080";
 
 export default defineConfig({
   plugins: [
@@ -22,6 +24,12 @@ export default defineConfig({
     vueJsx(),
     vueDevTools(),
     tailwindcss(),
+    istanbul({
+      include: "src/**/*",
+      exclude: ["node_modules", "e2e", "dist"],
+      extension: [".js", ".ts", ".tsx", ".vue"],
+      requireEnv: true,
+    }),
     visualizer({ gzipSize: true, brotliSize: true }),
     Layouts({
       defaultLayout: "default",
@@ -53,7 +61,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api/v1": {
-        target: "http://localhost:8080",
+        target: proxyApiURL,
         changeOrigin: true,
       },
     },
@@ -67,9 +75,6 @@ export default defineConfig({
   },
   fmt: {
     ignorePatterns: ["dist/**", "*.d.ts"],
-  },
-  test: {
-    passWithNoTests: true,
   },
   staged: {
     "*": "vp check --fix",

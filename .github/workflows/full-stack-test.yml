@@ -1,0 +1,202 @@
+name: Full Stack Test
+
+on:
+  pull_request:
+    paths:
+      - backend/**
+      - frontend/**
+      - .github/workflows/full-stack-test.yml
+  push:
+    branches:
+      - master
+    paths:
+      - backend/**
+      - frontend/**
+      - .github/workflows/full-stack-test.yml
+
+jobs:
+  full-stack-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: fba
+          POSTGRES_PASSWORD: 123456
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fba"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      UV_CACHE_DIR: /tmp/.uv-cache
+      TEE_API_TOKEN: test-token
+      E2E_API_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v7
+      - name: Restore uv cache
+        uses: actions/cache@v5
+        with:
+          path: /tmp/.uv-cache
+          key: uv-${{ runner.os }}-backend-${{ hashFiles('backend/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-backend-
+            uv-${{ runner.os }}-
+      - name: Restore backend check cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            backend/.mypy_cache
+            backend/.ruff_cache
+            backend/.pytest_cache
+          key: backend-check-${{ runner.os }}-${{ hashFiles('backend/uv.lock', 'backend/ruff.toml') }}
+          restore-keys: |
+            backend-check-${{ runner.os }}-
+
+      - name: Prepare backend env
+        run: cp backend/backend/.env.example backend/backend/.env
+
+      - name: Start object storage
+        env:
+          MINIO_ROOT_USER: rustfsadmin
+          MINIO_ROOT_PASSWORD: ChangeMe123!
+        run: |
+          docker run -d \
+            --name fba-minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER \
+            -e MINIO_ROOT_PASSWORD \
+            quay.io/minio/minio:latest server /data
+
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:9000/minio/health/ready; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              docker logs fba-minio
+              exit 1
+            fi
+            sleep 2
+          done
+
+          docker run --rm --network host \
+            --entrypoint /bin/sh \
+            -e MINIO_ROOT_USER \
+            -e MINIO_ROOT_PASSWORD \
+            minio/mc:latest -c '
+              mc alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" &&
+              mc mb --ignore-existing local/fba-static &&
+              mc anonymous set download local/fba-static
+            '
+
+      - name: Run backend tests
+        working-directory: backend
+        run: timeout 600 uv run pytest
+
+      - name: Run backend lint checks
+        working-directory: backend
+        run: bash pre-commit.sh
+
+      - name: Reset backend state for E2E
+        working-directory: backend
+        run: |
+          uv run python <<'PY'
+          import asyncio
+          import os
+
+          import psycopg
+          from redis.asyncio import Redis
+
+
+          if os.environ.get("GITHUB_ACTIONS") != "true":
+              raise SystemExit("Refusing to reset backend state outside GitHub Actions.")
+
+          with psycopg.connect("postgresql://postgres:123456@127.0.0.1:5432/postgres", autocommit=True) as conn:
+              with conn.cursor() as cur:
+                  cur.execute("DROP DATABASE IF EXISTS fba WITH (FORCE)")
+                  cur.execute("CREATE DATABASE fba")
+
+
+          async def main() -> None:
+              for database in (0, 1):
+                  redis = Redis(host="127.0.0.1", port=6379, db=database, decode_responses=True)
+                  try:
+                      await redis.flushdb()
+                  finally:
+                      await redis.aclose()
+
+
+          asyncio.run(main())
+          PY
+
+      - name: Run backend migrations for E2E
+        working-directory: backend
+        run: uv run fba migrate
+
+      - name: Start backend API for E2E
+        working-directory: backend
+        run: |
+          uv run fba run --host 127.0.0.1 --port 8080 --workers 1 > ../backend-e2e.log 2>&1 &
+          echo $! > ../backend-e2e.pid
+
+          for attempt in {1..60}; do
+            if curl -fsS http://127.0.0.1:8080/openapi > /dev/null; then
+              exit 0
+            fi
+            if ! kill -0 "$(cat ../backend-e2e.pid)" 2>/dev/null; then
+              cat ../backend-e2e.log
+              exit 1
+            fi
+            sleep 2
+          done
+
+          cat ../backend-e2e.log
+          exit 1
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run frontend lint
+        working-directory: frontend
+        run: pnpm lint
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run frontend black-box E2E with coverage
+        working-directory: frontend
+        run: pnpm run test
+
+      - name: Ensure no autofix diff
+        run: git diff --exit-code
+
+      - name: Show backend E2E log on failure
+        if: failure()
+        run: cat backend-e2e.log || true

@@ -11,10 +11,8 @@ declare global {
   const EffectScope: typeof import('vue').EffectScope
   const PAGE_SIZES: typeof import('../constants/pagination').PAGE_SIZES
   const RADIUS: typeof import('../constants/themes').RADIUS
-  const RouteLocationRaw: typeof import("../constants/route-path").RouteLocationRaw
   const RouterPath: typeof import('../constants/route-path').RouterPath
   const THEMES: typeof import('../constants/themes').THEMES
-  const THEMES_COLOR: (typeof import("../constants/themes"))["THEMES_COLOR"]
   const THEME_PRIMARY_COLORS: typeof import('../constants/themes').THEME_PRIMARY_COLORS
   const computed: typeof import('vue').computed
   const createApp: typeof import('vue').createApp
@@ -32,7 +30,6 @@ declare global {
   const isReadonly: typeof import('vue').isReadonly
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
-  const logout: (typeof import("../composables/use-auth"))["logout"]
   const markRaw: typeof import('vue').markRaw
   const nextTick: typeof import('vue').nextTick
   const onActivated: typeof import('vue').onActivated
@@ -80,7 +77,6 @@ declare global {
   const useSlots: typeof import('vue').useSlots
   const useSystemTheme: typeof import('../composables/use-system-theme').useSystemTheme
   const useTemplateRef: typeof import('vue').useTemplateRef
-  const useThemeConfig: (typeof import("../composables/use-theme-config"))["useThemeConfig"]
   const useThemeStore: typeof import('../stores/theme').useThemeStore
   const watch: typeof import('vue').watch
   const watchEffect: typeof import('vue').watchEffect

@@ -13,6 +13,10 @@ dist-ssr
 *.local
 
 stats.html
+playwright-report
+test-results
+coverage
+.nyc_output
 
 # Editor directories and files
 .vscode/*

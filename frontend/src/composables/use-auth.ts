@@ -76,6 +76,21 @@ function normalizeAuthError(error: unknown): AuthError {
   return createAuthError(DEFAULT_LOGIN_ERROR);
 }
 
+function loginRedirectTarget(redirect: unknown): string {
+  if (typeof redirect !== "string" || !redirect.startsWith("/") || redirect.startsWith("//")) {
+    return "/dashboard";
+  }
+
+  if (typeof window !== "undefined") {
+    const target = new URL(redirect, window.location.origin);
+    if (target.origin !== window.location.origin) {
+      return "/dashboard";
+    }
+  }
+
+  return redirect;
+}
+
 export function useAuth() {
   const router = useRouter();
   const { axiosInstance } = useAxios();
@@ -83,13 +98,15 @@ export function useAuth() {
   const authStore = useAuthStore(pinia);
   const loading = ref(false);
 
-  function redirectAfterLogin() {
-    const redirect = router.currentRoute.value.query.redirect as string;
-    if (!redirect || redirect.startsWith("//")) {
-      void router.push({ path: "/dashboard" });
-    } else {
-      void router.push(redirect);
+  function reloadAfterLogin() {
+    const redirect = router.currentRoute.value.query.redirect;
+    const target = loginRedirectTarget(redirect);
+
+    if (typeof window !== "undefined") {
+      window.location.assign(router.resolve(target).href);
+      return;
     }
+    void router.push(target);
   }
 
   function logout() {
@@ -112,7 +129,6 @@ export function useAuth() {
 
       // 存储认证信息到store
       authStore.setAuthInfo(data.access_token, data.session_uuid, data.user);
-      redirectAfterLogin();
     } catch (error: unknown) {
       console.error("Login error:", error);
       const authError = normalizeAuthError(error);
@@ -123,6 +139,8 @@ export function useAuth() {
     } finally {
       loading.value = false;
     }
+
+    reloadAfterLogin();
   }
 
   return {
